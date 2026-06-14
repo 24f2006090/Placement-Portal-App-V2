@@ -140,3 +140,346 @@ api.add_resource(
     DriveapproveAPI,
     '/api/drive/<int:drive_id>/approve'
 )
+
+class StudentDriveListAPI(Resource):
+    @auth_required()
+    @roles_required('student')
+    def get(self):
+        drives = PlacementDrive.query.filter_by(status='approved').all()
+        return [
+            {
+                "id": d.id,
+                "job_title": d.job_title,
+                "description": d.description,
+                "min_cgpa": d.min_cgpa,
+                "elig_branch": d.elig_branch,
+                "elig_year": d.elig_year
+            }
+            for d in drives
+        ]
+    
+api.add_resource(
+    StudentDriveListAPI,
+    '/api/student/drives'
+)   
+
+class ApplyDriveAPI(Resource):
+    @auth_required()
+    @roles_required('student')
+    def post(self, drive_id):
+
+        student = Student.query.filter_by(user_id=current_user.id).first()
+        drive = PlacementDrive.query.get(drive_id)
+        if not student:
+            return {
+                "message": "Student profile not found"
+            }, 404
+        if not drive:
+            return {
+                "message": "Drive not found"
+            }, 404
+
+        if drive.status != "approved":
+            return {
+                "message": "Drive not approved"
+            }, 400
+        if student.cgpa < drive.min_cgpa:
+            return {
+                "message": "CGPA criteria not satisfied"
+            }, 400
+
+        if student.branch != drive.elig_branch:
+            return {
+                "message": "Branch not eligible"
+            }, 400
+
+        if student.year != drive.elig_year:
+            return {
+                "message": "Year not eligible"
+            }, 400
+        
+        existing = Application.query.filter_by(
+            student_id=student.id,
+            driveid=drive_id
+        ).first()
+
+        if existing:
+            return {
+                "message": "Already applied"
+            }, 400
+
+        application = Application(
+            student_id=student.id,
+            driveid=drive_id,
+            status="applied"
+        )
+
+        db.session.add(application)
+        db.session.commit()
+
+        return {
+            "message": "Applied successfully"
+        }, 201
+    
+api.add_resource(
+    ApplyDriveAPI,
+    '/api/apply/<int:drive_id>'
+)
+
+class StudentApplicationsAPI(Resource):
+    @auth_required()
+    @roles_required('student')
+    def get(self):
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        applications = Application.query.filter_by(
+            student_id=student.id
+        ).all()
+
+        return [
+            {
+                "application_id": a.id,
+                "drive_id": a.driveid,
+                "status": a.status
+            }
+            for a in applications
+        ]
+    
+api.add_resource(
+    StudentApplicationsAPI,
+    '/api/student/applications'
+)
+
+class ApplicantsDriveAPI(Resource):
+    @auth_required()
+    @roles_required('company')
+    def get(self, drive_id):
+        applications = Application.query.filter_by(driveid=drive_id).all()
+        result = []
+
+        for app in applications:
+            student = Student.query.get(app.student_id)
+            result.append({
+                "application_id": app.id,
+                "student_id": student.id,
+                "name": student.name,
+                "branch": student.branch,
+                "cgpa": student.cgpa,
+                "year": student.year,
+                "status": app.status
+            })
+        return result
+
+api.add_resource(
+    ApplicantsDriveAPI,
+    '/api/drive/<int:drive_id>/applicants'
+)
+class ApplicationStatusUpdateAPI(Resource):
+    @auth_required()
+    @roles_required('company')
+    def put(self, application_id):
+        data = request.get_json()
+
+        application = Application.query.get(
+            application_id
+        )
+
+        if not application:
+            return {
+                "message": "Application not found"
+            }, 404
+        application.status = data["status"]
+        db.session.commit()
+
+        return {
+            "message": "Status updated"
+        }
+
+api.add_resource(
+    ApplicationStatusUpdateAPI,
+    '/api/application/<int:application_id>/status'
+)
+
+class AllApplicationsAPI(Resource):
+
+    @auth_required()
+    @roles_required('admin')
+    def get(self):
+
+        applications = Application.query.all()
+
+        return [
+            {
+                "application_id": a.id,
+                "student_id": a.student_id,
+                "drive_id": a.driveid,
+                "status": a.status
+            }
+            for a in applications
+        ]
+
+api.add_resource(
+    AllApplicationsAPI,
+    '/api/admin/applications'
+)
+
+class StudentListAPI(Resource):
+    @auth_required()
+    @roles_required('admin')
+    def get(self):
+        students = Student.query.all()
+
+        return [
+            {
+                "id": s.id,
+                "branch": s.branch,
+                "cgpa": s.cgpa,
+                "year": s.year
+            }
+            for s in students
+        ]
+
+api.add_resource(
+    StudentListAPI,
+    '/api/students'
+)
+
+class SearchStudentAPI(Resource):
+    @auth_required()
+    @roles_required('admin')
+    def get(self):
+        branch = request.args.get('branch')
+        students = Student.query.filter_by(branch=branch).all()
+
+        return [
+            {
+                "id": s.id,
+                "cgpa": s.cgpa,
+                "year": s.year
+            }
+            for s in students
+        ]
+
+api.add_resource(
+    SearchStudentAPI,
+    '/api/search/students'
+)
+
+class SearchDriveAPI(Resource):
+    @auth_required()
+    @roles_required('admin')
+    def get(self):
+        title = request.args.get('title')
+        drives = PlacementDrive.query.filter(PlacementDrive.job_title.contains(title)).all()
+
+        return [
+            {
+                "id": d.id,
+                "job_title": d.job_title,
+                "status": d.status
+            }
+            for d in drives
+        ]
+
+api.add_resource(
+    SearchDriveAPI,
+    '/api/search/drives'
+)
+
+class CompanyDriveAPI(Resource):
+
+    @auth_required()
+    @roles_required('company')
+    def get(self):
+        company = Company.query.filter_by(user_id=current_user.id).first()
+        drives = PlacementDrive.query.filter_by(company_id=company.id).all()
+
+        return [
+            {
+                "id": d.id,
+                "job_title": d.job_title,
+                "status": d.status
+            }
+            for d in drives
+        ]
+
+api.add_resource(
+    CompanyDriveAPI,
+    '/api/company/drives'
+)
+
+class DriveDetailsAPI(Resource):
+    @auth_required()
+    def get(self, drive_id):
+        drive = PlacementDrive.query.get(drive_id)
+        if not drive:
+            return {
+                "message": "Drive not found"
+            }, 404
+
+        return {
+            "id": drive.id,
+            "job_title": drive.job_title,
+            "description": drive.description,
+            "min_cgpa": drive.min_cgpa,
+            "elig_branch": drive.elig_branch,
+            "elig_year": drive.elig_year,
+            "status": drive.status
+        }
+
+api.add_resource(
+    DriveDetailsAPI,
+    '/api/drive/<int:drive_id>'
+)
+
+class SearchApplicantAPI(Resource):
+    @auth_required()
+    @roles_required('company')
+    def get(self):
+        branch = request.args.get('branch')
+        students = Student.query.filter_by(branch=branch).all()
+
+        return [
+            {
+                "id": s.id,
+                "branch": s.branch,
+                "cgpa": s.cgpa
+            }
+            for s in students
+        ]
+
+api.add_resource(
+    SearchApplicantAPI,
+    '/api/search/applicants'
+)
+
+class DeleteDriveAPI(Resource):
+    @auth_required()
+    @roles_required('company')
+    def delete(self, drive_id):
+        company = Company.query.filter_by(user_id=current_user.id).first()
+        drive = PlacementDrive.query.get(drive_id)
+
+        if not drive:
+            return {
+                "message": "Drive not found"
+            }, 404
+
+        if drive.company_id != company.id:
+            return {
+                "message": "You can delete only your own drives"
+            }, 403
+
+        db.session.delete(drive)
+        db.session.commit()
+
+        return {
+            "message": "Drive deleted"
+        }, 200
+
+api.add_resource(
+    DeleteDriveAPI,
+    '/api/drive/<int:drive_id>/delete'
+)
