@@ -1,3 +1,5 @@
+from unittest import result
+
 from flask_restful import Api, Resource
 from flask_security import auth_required, roles_required,current_user
 from flask import request
@@ -310,15 +312,24 @@ class AllApplicationsAPI(Resource):
 
         applications = Application.query.all()
 
-        return [
-            {
+        result = []
+
+        for a in applications:
+
+            student = Student.query.get(a.student_id)
+
+            drive = PlacementDrive.query.get(a.driveid)
+
+            result.append({
+
                 "application_id": a.id,
-                "student_id": a.student_id,
-                "drive_id": a.driveid,
+                "student_name": student.name,
+                "drive_name": drive.job_title,
                 "status": a.status
-            }
-            for a in applications
-        ]
+
+            })
+
+        return result
 
 api.add_resource(
     AllApplicationsAPI,
@@ -334,6 +345,7 @@ class StudentListAPI(Resource):
         return [
             {
                 "id": s.id,
+                "name": s.name,
                 "branch": s.branch,
                 "cgpa": s.cgpa,
                 "year": s.year
@@ -482,4 +494,130 @@ class DeleteDriveAPI(Resource):
 api.add_resource(
     DeleteDriveAPI,
     '/api/drive/<int:drive_id>/delete'
+)
+class CompleteDriveAPI(Resource):
+
+    @auth_required()
+    @roles_required('admin')
+    def put(self, drive_id):
+
+        drive = PlacementDrive.query.get(drive_id)
+
+        if not drive:
+            return {
+                "message": "Drive not found"
+            }, 404
+
+        drive.status = "completed"
+
+        db.session.commit()
+
+        return {
+            "message": "Drive marked completed"
+        }, 200
+
+
+api.add_resource(
+    CompleteDriveAPI,
+    '/api/drive/<int:drive_id>/complete'
+)
+
+class BlacklistCompanyAPI(Resource):
+
+    @auth_required()
+    @roles_required('admin')
+    def put(self, company_id):
+
+        company = Company.query.get(company_id)
+
+        if not company:
+            return {
+                "message":"Company not found"
+            },404
+
+        company.status = "blacklisted"
+
+        drives = PlacementDrive.query.filter_by(
+            company_id=company.id
+        ).all()
+
+        for drive in drives:
+
+            drive.status = "cancelled"
+
+            applications = Application.query.filter_by(
+                driveid=drive.id
+            ).all()
+
+            for app in applications:
+                app.status = "cancelled"
+
+        db.session.commit()
+
+        return {
+            "message":"Company blacklisted"
+        },200
+
+api.add_resource(
+    BlacklistCompanyAPI,
+    '/api/company/<int:company_id>/blacklist'
+)
+
+class BlacklistStudentAPI(Resource):
+
+    @auth_required()
+    @roles_required('admin')
+    def put(self, student_id):
+
+        student = Student.query.get(student_id)
+
+        if not student:
+            return {
+                "message":"Student not found"
+            },404
+
+        applications = Application.query.filter_by(
+            student_id=student.id
+        ).all()
+
+        for app in applications:
+            app.status = "cancelled"
+
+        db.session.commit()
+
+        return {
+            "message":"Student blacklisted"
+        },200
+
+api.add_resource(
+    BlacklistStudentAPI,
+    '/api/student/<int:student_id>/blacklist'
+)
+
+class ApplicationDetailsAPI(Resource):
+
+    @auth_required()
+    @roles_required('admin')
+    def get(self, application_id):
+
+        app = Application.query.get(application_id)
+
+        if not app:
+            return {
+                "message":"Application not found"
+            },404
+
+        student = Student.query.get(app.student_id)
+
+        return {
+            "application_id": app.id,
+            "student_id": student.id,
+            "branch": student.branch,
+            "cgpa": student.cgpa,
+            "status": app.status
+        }
+
+api.add_resource(
+    ApplicationDetailsAPI,
+    '/api/application/<int:application_id>'
 )

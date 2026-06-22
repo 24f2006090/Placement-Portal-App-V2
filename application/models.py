@@ -31,7 +31,6 @@ class Student(db.Model):
     year = db.Column(db.Integer)
     phone = db.Column(db.String(15))
     resume = db.Column(db.String())
-
 class Company(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer,db.ForeignKey('user.id'))
