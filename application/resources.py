@@ -144,25 +144,92 @@ api.add_resource(
 )
 
 class StudentDriveListAPI(Resource):
+
     @auth_required()
     @roles_required('student')
     def get(self):
-        drives = PlacementDrive.query.filter_by(status='approved').all()
-        return [
-            {
+
+        drives = PlacementDrive.query.filter_by(
+            status='approved'
+        ).all()
+
+        result = []
+
+        for d in drives:
+
+            company = Company.query.get(
+                d.company_id
+            )
+
+            result.append({
+
                 "id": d.id,
                 "job_title": d.job_title,
                 "description": d.description,
                 "min_cgpa": d.min_cgpa,
                 "elig_branch": d.elig_branch,
-                "elig_year": d.elig_year
-            }
-            for d in drives
-        ]
+                "elig_year": d.elig_year,
+                "company_name": company.company_name
+
+            })
+
+        return result
     
 api.add_resource(
     StudentDriveListAPI,
     '/api/student/drives'
+)
+class StudentProfileAPI(Resource):
+
+    @auth_required()
+    @roles_required("student")
+
+    def get(self):
+
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        return {
+
+            "name": student.name,
+            "branch": student.branch,
+            "cgpa": student.cgpa,
+            "year": student.year,
+            "phone": student.phone,
+            "resume": student.resume
+
+        },200
+
+
+    @auth_required()
+    @roles_required("student")
+
+    def put(self):
+
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        data = request.get_json()
+
+        student.name = data["name"]
+        student.branch = data["branch"]
+        student.cgpa = data["cgpa"]
+        student.year = data["year"]
+        student.phone = data["phone"]
+
+        db.session.commit()
+
+        return {
+
+            "message":"Profile Updated Successfully"
+
+        },200
+
+api.add_resource(
+    StudentProfileAPI,
+    '/api/student/profile'
 )   
 
 class ApplyDriveAPI(Resource):
@@ -229,9 +296,11 @@ api.add_resource(
 )
 
 class StudentApplicationsAPI(Resource):
+
     @auth_required()
     @roles_required('student')
     def get(self):
+
         student = Student.query.filter_by(
             user_id=current_user.id
         ).first()
@@ -240,19 +309,68 @@ class StudentApplicationsAPI(Resource):
             student_id=student.id
         ).all()
 
-        return [
-            {
-                "application_id": a.id,
-                "drive_id": a.driveid,
-                "status": a.status
-            }
-            for a in applications
-        ]
-    
+        result = []
+
+        for app in applications:
+
+            drive = PlacementDrive.query.get(app.driveid)
+
+            if not drive:
+                continue
+
+            company = Company.query.get(drive.company_id)
+            result.append({
+
+                "application_id": app.id,
+                "drive_id": app.driveid,
+                "drive_name": drive.job_title,
+                "company_name": company.company_name,
+                "status": app.status
+
+            })
+
+        return result
 api.add_resource(
     StudentApplicationsAPI,
     '/api/student/applications'
 )
+
+class UploadResumeAPI(Resource):
+
+    @auth_required()
+    @roles_required("student")
+    def post(self):
+
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        if "resume" not in request.files:
+            return {
+                "message": "No file selected"
+            }, 400
+
+        file = request.files["resume"]
+
+        filename = f"{student.id}.pdf"
+
+        file.save(
+            "static/uploads/" + filename
+        )
+
+        student.resume = "/static/uploads/" + filename
+
+        db.session.commit()
+
+        return {
+            "message": "Resume uploaded successfully"
+        }, 200
+
+api.add_resource(
+    UploadResumeAPI,
+     "/api/student/upload_resume"
+)
+
 
 class ApplicantsDriveAPI(Resource):
     @auth_required()
@@ -270,7 +388,8 @@ class ApplicantsDriveAPI(Resource):
                 "branch": student.branch,
                 "cgpa": student.cgpa,
                 "year": student.year,
-                "status": app.status
+                "status": app.status,
+                "resume": student.resume
             })
         return result
 
@@ -438,7 +557,7 @@ class DriveDetailsAPI(Resource):
             "min_cgpa": drive.min_cgpa,
             "elig_branch": drive.elig_branch,
             "elig_year": drive.elig_year,
-            "status": drive.status
+            "status": drive.status,
         }
 
 api.add_resource(

@@ -9,7 +9,9 @@ export default {
             stats:{
                 drives:0,
                 applications:0
-            }
+            },
+            studentName:'',
+            resume:null
 
         }
 
@@ -30,6 +32,7 @@ export default {
 
         this.loadDrives()
         this.loadApplications()
+        this.loadProfile()
 
     },
 
@@ -62,6 +65,38 @@ export default {
 
                 this.drives=data
                 this.stats.drives=data.length
+
+            })
+
+        },
+        viewDrive(id){
+
+            const drive = this.drives.find(
+                d => d.id === id
+            )
+
+            alert(
+                "Job Title: " + drive.job_title +
+                "\nDescription: " + drive.description +
+                "\nCompany: " + drive.company_name +
+                "\nBranch: " + drive.elig_branch +
+                "\nCGPA: " + drive.min_cgpa
+            )
+
+        },
+        loadProfile(){
+
+            fetch(
+                '/api/student/profile',
+                {
+                    headers:this.getHeaders()
+                }
+            )
+
+            .then(res=>res.json())
+            .then(data=>{
+
+                this.studentName = data.name
 
             })
 
@@ -106,6 +141,55 @@ export default {
             })
 
         },
+        selectResume(event){
+            this.resume = event.target.files[0]
+
+        },
+        uploadResume(){
+
+    if(!this.resume){
+
+        alert("Please select a PDF")
+
+        return
+
+    }
+
+    const formData = new FormData()
+
+    formData.append(
+        "resume",
+        this.resume
+    )
+
+    fetch(
+
+        "/api/student/upload_resume",
+
+        {
+
+            method:"POST",
+
+            headers:{
+                "Authorization-token":
+                localStorage.getItem("auth_token")
+            },
+
+            body:formData
+
+        }
+
+    )
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        alert(data.message)
+
+    })
+
+},
 
         logout(){
 
@@ -124,10 +208,17 @@ export default {
         <div class="d-flex justify-content-between align-items-center">
 
             <h2>
-                Student Dashboard
+                Welcome {{studentName}}
             </h2>
 
             <div>
+                <router-link
+                    class="btn btn-warning me-2"
+                    to="/student/profile">
+
+                        Edit Profile
+
+                </router-link>
 
                 <router-link
                 class="btn btn-primary me-2"
@@ -195,6 +286,33 @@ export default {
 
         <div class="card mt-4">
 
+         <div class="card mt-4">
+
+    <div class="card-header">
+
+        Resume
+
+    </div>
+
+    <div class="card-body">
+
+        <input
+        type="file"
+        class="form-control mb-3"
+        @change="selectResume">
+
+        <button
+        class="btn btn-primary"
+        @click="uploadResume">
+
+            Upload Resume
+
+        </button>
+
+    </div>
+
+</div>
+
             <div class="card-header">
 
                 Available Drives
@@ -238,6 +356,12 @@ export default {
 
                             <td>
 
+                            <button
+                                class="btn btn-info btn-sm me-2"
+                                @click="viewDrive(drive.id)">
+                                    View
+                                </button>
+
                                 <button
                                     v-if="!appliedDriveIds.includes(drive.id)"
                                     class="btn btn-success btn-sm"
@@ -275,7 +399,6 @@ export default {
                 My Applications
 
             </div>
-
             <div class="card-body">
 
                 <table class="table table-bordered">
@@ -284,8 +407,8 @@ export default {
 
                         <tr>
 
-                            <th>ID</th>
                             <th>Drive</th>
+                            <th>Company</th>
                             <th>Status</th>
 
                         </tr>
@@ -299,15 +422,54 @@ export default {
                         :key="app.application_id">
 
                             <td>
-                                {{app.application_id}}
+                                {{app.drive_name || app.drive_id}}
+                            </td>
+                            
+                            <td>
+                                {{app.company_name}}
                             </td>
 
                             <td>
-                                {{app.drive_id}}
-                            </td>
 
-                            <td>
-                                {{app.status}}
+                            <span
+                            v-if="app.status=='applied'"
+                            class="badge bg-success">
+
+                            Applied
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='rejected'"
+                            class="badge bg-danger">
+
+                            Rejected
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='Shortlisted'"
+                            class="badge bg-primary">
+
+                            Shortlisted
+
+                            </span>
+
+                             <span
+                            v-else-if="app.status=='waiting'"
+                            class="badge bg-warning text-dark">
+
+                            Waiting
+
+                            </span>
+
+                            <span
+                            v-else>
+
+                            {{app.status}}
+
+                            </span>
+
                             </td>
 
                         </tr>
