@@ -53,3 +53,7 @@ class Application(db.Model):
     student_id = db.Column(db.Integer,db.ForeignKey('student.id'))
     driveid = db.Column(db.Integer,db.ForeignKey('placement_drive.id'))
     status = db.Column(db.String(15),default='applied')
+    interview_date = db.Column(db.String(20))
+    interview_time = db.Column(db.String(20))
+    interview_mode = db.Column(db.String(20))
+    interview_venue = db.Column(db.String(200))

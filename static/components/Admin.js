@@ -398,8 +398,6 @@ loadDashboard() {
             </table>
 
 
-            <!-- Registered Students -->
-
             <h5 class="mt-4">
                 Registered Students
             </h5>
@@ -431,25 +429,76 @@ loadDashboard() {
                 </tbody>
 
             </table>
+<!-- Pending Company Approval -->
 
-            <h5 class="mt-4">
-                Company Applications
-            </h5>
-            <h5 class="mt-4">
-    Drive Applications
+<h5 class="mt-4">
+
+    Company Approval
+
 </h5>
 
 <table class="table table-bordered">
 
+    <thead>
+
+        <tr>
+            <th>Company</th>
+            <th>Action</th>
+        </tr>  
+    </thead>
+
     <tbody>
 
+        <tr
+        v-for="company in pendingCompanies"
+        :key="company.id">
+
+            <td>{{company.company_name}}</td>
+
+            <td width="150">
+
+                <button
+                class="btn btn-success btn-sm"
+                @click="approveCompany(company.id)">
+
+                    Approve
+
+                </button>
+
+            </td>
+
+        </tr>
+
+    </tbody>
+
+</table>
+
+
+<h5 class="mt-4">
+
+    Placement Drive Approval
+
+</h5>
+
+<table class="table table-bordered">
+    
+        <thead>
+
+            <tr>
+                <th>Company</th>
+                <th>Drive Title</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
         <tr
         v-for="drive in pendingDrives"
         :key="drive.id">
 
-            <td>
-                {{drive.job_title}}
-            </td>
+            <td>{{drive.company_name}}</td>
+
+            <td>{{drive.job_title}}</td>
 
             <td width="150">
 
@@ -468,34 +517,7 @@ loadDashboard() {
     </tbody>
 
 </table>
-            <table class="table table-bordered">
 
-                <tbody>
-
-                    <tr
-                    v-for="company in pendingCompanies"
-                    :key="company.id">
-
-                        <td>{{company.company_name}}</td>
-
-                        <td width="150">
-
-                            <button
-                            class="btn btn-success btn-sm"
-                            @click="approveCompany(company.id)">
-                                Approve
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-
-            <!-- Ongoing Drives -->
 
             <h5 class="mt-4">
                 Ongoing Drives

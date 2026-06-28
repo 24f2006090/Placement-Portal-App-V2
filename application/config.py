@@ -10,4 +10,5 @@ class LocalConfig(Config):
     SECURITY_PASSWORD_SALT = 'this-is-password-salt'
     WTF_CSRF_ENABLED = False
     SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authorization-token'
+    SECURITY_TOKEN_AUTHENTICATION_ENABLED = True
 

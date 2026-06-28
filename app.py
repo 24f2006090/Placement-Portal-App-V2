@@ -19,6 +19,7 @@ def create_app():
     app.app_context().push()
     return app
 
+
 app = create_app()
 
 from application.routes import *

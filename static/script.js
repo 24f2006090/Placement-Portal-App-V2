@@ -4,10 +4,13 @@ import Register from './components/Register.js'
 import Navbar from './components/Navbar.js'
 import Footer from './components/Footer.js'
 import Admin from './components/Admin.js'
-import Student from './components/Student.js' 
+import Student from './components/Student.js'
+import StudentRegister from './components/StudentRegister.js' 
 import StudentHistory from './components/StudentHistory.js'
 import EditStudentProfile from "./components/EditStudentProfile.js"
 import company from './components/Company.js'
+import CompanyRegister from './components/CompanyRegister.js'
+import EditCompanyProfile from "./components/EditCompanyProfile.js"
 import Applicants from "./components/Applicants.js"
 
 
@@ -17,9 +20,12 @@ const routes=[
     {path:'/register',component:Register},
     { path:'/admin', component:Admin },
     { path:'/student', component:Student},
+    { path:'/student/register', component:StudentRegister},
     { path:'/student/history', component:StudentHistory},
     { path:'/student/profile', component:EditStudentProfile},
     { path:'/company', component:company},
+    { path:'/company/register', component:CompanyRegister},
+    { path:'/company/profile',component:EditCompanyProfile},
     {path: "/company/drive/:id/applicants",component: Applicants}
 ]
 const router = new VueRouter({

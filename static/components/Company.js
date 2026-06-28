@@ -174,15 +174,31 @@ export default {
 
     <div class="d-flex justify-content-between align-items-center">
 
-        <h2>Company Dashboard</h2>
+        <h2>
 
-        <button
-        class="btn btn-danger"
-        @click="logout">
+            Company Dashboard
 
-            Logout
+        </h2>
 
-        </button>
+        <div>
+
+            <router-link
+            class="btn btn-warning me-2"
+            to="/company/profile">
+
+                Edit Profile
+
+            </router-link>
+
+            <button
+            class="btn btn-danger"
+            @click="logout">
+
+                Logout
+
+            </button>
+
+        </div>
 
     </div>
 
@@ -190,7 +206,7 @@ export default {
 
         <div class="col-md-6">
 
-            <div class="card text-center">
+            <div class="card text-center shadow-sm">
 
                 <div class="card-body">
 
@@ -206,7 +222,7 @@ export default {
 
         <div class="col-md-6">
 
-            <div class="card text-center">
+            <div class="card text-center shadow-sm">
 
                 <div class="card-body">
 
@@ -222,12 +238,14 @@ export default {
 
     </div>
 
-    <div class="card mt-4">
+    <div class="card mt-4 shadow-sm">
 
         <div class="card-header">
 
             <h5 class="mb-0">
+
                 Create Placement Drive
+
             </h5>
 
         </div>
@@ -272,102 +290,23 @@ export default {
 
     </div>
 
-    <div class="card mt-4">
+    <div class="card mt-4 shadow-sm">
 
         <div class="card-header">
 
             <h5 class="mb-0">
+
                 My Placement Drives
+
             </h5>
-
-            <div class="card mt-4">
-
-    <div class="card-header">
-
-        Applicants
-
-    </div>
-
-    <div class="card-body">
-
-        <table class="table table-bordered">
-
-            <thead>
-
-                <tr>
-
-                    <th>Name</th>
-                    <th>Branch</th>
-                    <th>CGPA</th>
-                    <th>Year</th>
-                    <th>Status</th>
-                    <th>Action</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <tr
-                v-for="app in applicants"
-                :key="app.application_id">
-
-                    <td>{{app.name}}</td>
-
-                    <td>{{app.branch}}</td>
-
-                    <td>{{app.cgpa}}</td>
-
-                    <td>{{app.year}}</td>
-
-                    <td>{{app.status}}</td>
-
-                    <td>
-
-                        <button
-                        class="btn btn-success btn-sm me-1"
-                        @click="updateStatus(app.application_id,'shortlisted')">
-
-                            Shortlist
-
-                        </button>
-
-                        <button
-                        class="btn btn-danger btn-sm me-1"
-                        @click="updateStatus(app.application_id,'rejected')">
-
-                            Reject
-
-                        </button>
-
-                        <button
-                        class="btn btn-primary btn-sm"
-                        @click="updateStatus(app.application_id,'selected')">
-
-                            Select
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-</div>
 
         </div>
 
         <div class="card-body">
 
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover align-middle">
 
-                <thead>
+                <thead class="table-light">
 
                     <tr>
 
@@ -386,42 +325,54 @@ export default {
                     v-for="drive in drives"
                     :key="drive.id">
 
-                        <td>{{drive.job_title}}</td>
+                        <td>
+
+                            {{drive.job_title}}
+
+                        </td>
 
                         <td>
 
-                                <span
-                                v-if="drive.status=='approved'"
-                                class="badge bg-success">
+                            <span
+                            v-if="drive.status=='approved'"
+                            class="badge bg-success">
 
-                                    Approved
+                                Approved
 
-                                </span>
+                            </span>
 
-                                <span
-                                v-else-if="drive.status=='pending'"
-                                class="badge bg-warning text-dark">
+                            <span
+                            v-else-if="drive.status=='pending'"
+                            class="badge bg-warning text-dark">
 
-                                    Pending
+                                Pending
 
-                                </span>
+                            </span>
 
-                                <span
-                                v-else-if="drive.status=='completed'"
-                                class="badge bg-primary">
+                            <span
+                            v-else-if="drive.status=='completed'"
+                            class="badge bg-primary">
 
-                                    Completed
+                                Completed
 
-                                </span>
+                            </span>
 
-                                <span
-                                v-else>
+                            <span
+                            v-else-if="drive.status=='cancelled'"
+                            class="badge bg-danger">
 
-                                    {{drive.status}}
+                                Cancelled
 
-                                </span>
+                            </span>
 
-                            </td>
+                            <span
+                            v-else>
+
+                                {{drive.status}}
+
+                            </span>
+
+                        </td>
 
                         <td>
 
@@ -429,7 +380,7 @@ export default {
                             class="btn btn-info btn-sm"
                             @click="viewApplicants(drive.id)">
 
-                                View
+                                View Applicants
 
                             </button>
 
@@ -458,6 +409,7 @@ export default {
     </div>
 
 </div>
+
 `
 }
 

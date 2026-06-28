@@ -433,9 +433,17 @@ export default {
 
                             <span
                             v-if="app.status=='applied'"
-                            class="badge bg-success">
+                            class="badge bg-secondary">
 
                             Applied
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='selected'"
+                            class="badge bg-success">
+
+                            Selected
 
                             </span>
 
@@ -448,7 +456,7 @@ export default {
                             </span>
 
                             <span
-                            v-else-if="app.status=='Shortlisted'"
+                            v-else-if="app.status=='shortlisted'"
                             class="badge bg-primary">
 
                             Shortlisted

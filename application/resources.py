@@ -8,7 +8,7 @@ from .models import Student, Company, PlacementDrive, Application,db
 api = Api()
 
 class AdminDashboardAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
         return {
@@ -23,7 +23,7 @@ api.add_resource(
 )
 
 class CompanyListAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
         companies = Company.query.all()
@@ -43,7 +43,7 @@ api.add_resource(
 )
 
 class CompanyApprovalAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def put(self,company_id):
         company = Company.query.get(company_id)
@@ -65,7 +65,7 @@ api.add_resource(
 )
 
 class DrivecreateAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def post(self):
         data = request.get_json()
@@ -94,32 +94,39 @@ api.add_resource(
     DrivecreateAPI,
     '/api/drive/create'
 )
-
 class ListDrivesAPI(Resource):
 
-    @auth_required()
-    @roles_required('admin')
+    @auth_required("token")
+    @roles_required("admin")
     def get(self):
 
         drives = PlacementDrive.query.all()
 
-        return [
-            {
-                "id": d.id,
-                "job_title": d.job_title,
-                "company_id": d.company_id,
-                "status": d.status
-            }
-            for d in drives
-        ]
-    
+        result = []
+
+        for drive in drives:
+
+            company = Company.query.get(drive.company_id)
+
+            result.append({
+
+                "id": drive.id,
+                "job_title": drive.job_title,
+                "company_name": company.company_name if company else "Unknown",
+                "status": drive.status
+
+            })
+
+        return result, 200
+
+
 api.add_resource(
     ListDrivesAPI,
-    '/api/drives'
+    "/api/drives"
 )
 class DriveapproveAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def put(self, drive_id):
 
@@ -145,7 +152,7 @@ api.add_resource(
 
 class StudentDriveListAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('student')
     def get(self):
 
@@ -227,13 +234,39 @@ class StudentProfileAPI(Resource):
 
         },200
 
+
+    @auth_required('token')
+    @roles_required("student")
+
+    def put(self):
+
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        data = request.get_json()
+
+        student.name = data["name"]
+        student.branch = data["branch"]
+        student.cgpa = data["cgpa"]
+        student.year = data["year"]
+        student.phone = data["phone"]
+
+        db.session.commit()
+
+        return {
+
+            "message":"Profile Updated Successfully"
+
+        },200
+
 api.add_resource(
     StudentProfileAPI,
     '/api/student/profile'
 )   
 
 class ApplyDriveAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('student')
     def post(self, drive_id):
 
@@ -297,7 +330,7 @@ api.add_resource(
 
 class StudentApplicationsAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('student')
     def get(self):
 
@@ -337,7 +370,7 @@ api.add_resource(
 
 class UploadResumeAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required("student")
     def post(self):
 
@@ -373,7 +406,7 @@ api.add_resource(
 
 
 class ApplicantsDriveAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def get(self, drive_id):
         applications = Application.query.filter_by(driveid=drive_id).all()
@@ -398,7 +431,7 @@ api.add_resource(
     '/api/drive/<int:drive_id>/applicants'
 )
 class ApplicationStatusUpdateAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def put(self, application_id):
         data = request.get_json()
@@ -423,9 +456,42 @@ api.add_resource(
     '/api/application/<int:application_id>/status'
 )
 
+class InterviewScheduleAPI(Resource):
+
+    @auth_required("token")
+    @roles_required("company")
+
+    def put(self, application_id):
+
+        application = Application.query.get(application_id)
+
+        if not application:
+
+            return {
+                "message": "Application not found"
+            },404
+
+        data = request.get_json()
+
+        application.interview_date = data["interview_date"]
+        application.interview_time = data["interview_time"]
+        application.interview_mode = data["interview_mode"]
+        application.interview_venue = data["interview_venue"]
+
+        db.session.commit()
+
+        return {
+            "message":"Interview Scheduled Successfully"
+        },200
+
+api.add_resource(
+    InterviewScheduleAPI,
+    "/api/application/<int:application_id>/schedule"
+)
+
 class AllApplicationsAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
 
@@ -456,7 +522,7 @@ api.add_resource(
 )
 
 class StudentListAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
         students = Student.query.all()
@@ -478,7 +544,7 @@ api.add_resource(
 )
 
 class SearchStudentAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
         branch = request.args.get('branch')
@@ -499,7 +565,7 @@ api.add_resource(
 )
 
 class SearchDriveAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self):
         title = request.args.get('title')
@@ -521,7 +587,7 @@ api.add_resource(
 
 class CompanyDriveAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def get(self):
         company = Company.query.filter_by(user_id=current_user.id).first()
@@ -541,8 +607,54 @@ api.add_resource(
     '/api/company/drives'
 )
 
-class DriveDetailsAPI(Resource):
+class CompanyProfileAPI(Resource):
+
     @auth_required()
+    @roles_required("company")
+
+    def get(self):
+
+        company = Company.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        return {
+
+            "company_name": company.company_name,
+            "website": company.website
+
+        },200
+
+
+    @auth_required()
+    @roles_required("company")
+
+    def put(self):
+
+        company = Company.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        data = request.get_json()
+
+        company.company_name = data["company_name"]
+        company.website = data["website"]
+
+        db.session.commit()
+
+        return {
+
+            "message":"Profile Updated Successfully"
+
+        },200
+
+api.add_resource(
+    CompanyProfileAPI,
+    "/api/company/profile"
+)
+
+class DriveDetailsAPI(Resource):
+    @auth_required('token')
     def get(self, drive_id):
         drive = PlacementDrive.query.get(drive_id)
         if not drive:
@@ -566,7 +678,7 @@ api.add_resource(
 )
 
 class SearchApplicantAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def get(self):
         branch = request.args.get('branch')
@@ -587,7 +699,7 @@ api.add_resource(
 )
 
 class DeleteDriveAPI(Resource):
-    @auth_required()
+    @auth_required('token')
     @roles_required('company')
     def delete(self, drive_id):
         company = Company.query.filter_by(user_id=current_user.id).first()
@@ -616,7 +728,7 @@ api.add_resource(
 )
 class CompleteDriveAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def put(self, drive_id):
 
@@ -643,7 +755,7 @@ api.add_resource(
 
 class BlacklistCompanyAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def put(self, company_id):
 
@@ -684,7 +796,7 @@ api.add_resource(
 
 class BlacklistStudentAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def put(self, student_id):
 
@@ -715,7 +827,7 @@ api.add_resource(
 
 class ApplicationDetailsAPI(Resource):
 
-    @auth_required()
+    @auth_required('token')
     @roles_required('admin')
     def get(self, application_id):
 

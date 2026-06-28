@@ -124,34 +124,49 @@ export default {
                                 {{app.company_name}}
                             </td>
 
-                            <td>
-                                
-                                <span
-                                class="badge bg-success"
-                                v-if="app.status=='applied'">
+                           <td>
 
-                                    Applied
+                                    <span
+                                    v-if="app.status=='selected'"
+                                    class="badge bg-success">
 
-                                </span>
+                                        Selected
 
-                                <span
-                                class="badge bg-danger"
-                                v-else-if="app.status=='cancelled'">
+                                    </span>
 
-                                    Cancelled
+                                    <span
+                                    v-else-if="app.status=='shortlisted'"
+                                    class="badge bg-info">
 
-                                </span>
+                                        Shortlisted
 
-                                <span
-                                class="badge bg-warning"
-                                v-else>
+                                    </span>
 
-                                    {{app.status}}
+                                    <span
+                                    v-else-if="app.status=='waiting'"
+                                    class="badge bg-warning text-dark">
 
-                                </span>
+                                        Waiting
 
-                            </td>
+                                    </span>
 
+                                    <span
+                                    v-else-if="app.status=='rejected'"
+                                    class="badge bg-danger">
+
+                                        Rejected
+
+                                    </span>
+
+                                    <span
+                                    v-else
+                                    class="badge bg-primary">
+
+                                        Applied
+
+                                    </span>
+
+                                </td>
                         </tr>
 
                     </tbody>

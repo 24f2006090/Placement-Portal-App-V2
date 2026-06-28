@@ -202,8 +202,16 @@ v-for="student in applicants"
 <td>
 
     <span
-    v-if="student.status=='shortlisted'"
+    v-if="student.status=='selected'"
     class="badge bg-success">
+
+        Selected
+
+    </span>
+
+    <span
+    v-else-if="student.status=='shortlisted'"
+    class="badge bg-info">
 
         Shortlisted
 
@@ -238,13 +246,22 @@ v-for="student in applicants"
 <td>
 
     <button
-class="btn btn-success btn-sm me-1"
+class="btn btn-primary btn-sm me-1"
 @click="updateStatus(student.application_id,'shortlisted')"
 :disabled="student.status=='shortlisted'">
 
 Shortlist
 
 </button>
+
+<button
+        class="btn btn-success btn-sm me-1"
+        @click="updateStatus(student.application_id,'selected')"
+        :disabled="student.status=='selected'">
+
+            Select
+
+    </button>
 
     <button
     class="btn btn-warning btn-sm me-1"
@@ -254,6 +271,7 @@ Shortlist
         Waiting
 
     </button>
+
 
     <button
     class="btn btn-danger btn-sm me-1"

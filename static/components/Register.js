@@ -1,73 +1,67 @@
-export default {
-    template: `
-    <div class="container mt-5">
+export default{
 
-        <div class="row justify-content-center">
+    template:`
 
-            <div class="col-md-6">
+<div class="container mt-5">
 
-                <div class="card">
+<div class="row justify-content-center">
 
-                    <div class="card-header bg-success text-white text-center">
-                        <h4 class="mb-0">Register</h4>
-                    </div>
+<div class="col-md-6">
 
-                    <div class="card-body">
+<div class="card shadow">
 
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input
-                                type="text"
-                                class="form-control"
-                                placeholder="Enter Username"
-                                v-model="username">
-                        </div>
+<div class="card-header bg-success text-white text-center">
 
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input
-                                type="email"
-                                class="form-control"
-                                placeholder="Enter Email"
-                                v-model="email">
-                        </div>
+<h3>
 
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input
-                                type="password"
-                                class="form-control"
-                                placeholder="Enter Password"
-                                v-model="password">
-                        </div>
+Create Account
 
-                        <div class="mb-3">
-                            <label class="form-label">Role</label>
-                            <select class="form-select" v-model="role">
-                                <option>Student</option>
-                                <option>Company</option>
-                            </select>
-                        </div>
+</h3>
 
-                        <button class="btn btn-success w-100">
-                            Register
-                        </button>
+</div>
 
-                        <div class="text-center mt-3">
-                            Already have an account?
-                            <router-link to="/login">
-                                Login
-                            </router-link>
-                        </div>
+<div class="card-body text-center">
 
-                    </div>
+<p class="mb-4">
 
-                </div>
+Please Select the Way you want to Register.
 
-            </div>
+</p>
 
-        </div>
+<router-link
+class="btn btn-primary w-100 mb-3"
+to="/student/register">
 
-    </div>
-    `
+Register as Student
+
+</router-link>
+
+<router-link
+class="btn btn-success w-100 mb-3"
+to="/company/register">
+
+Register as Company
+
+</router-link>
+
+<router-link
+class="btn btn-outline-dark w-100"
+to="/login">
+
+Back to Login
+
+</router-link>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+`
+
 }
