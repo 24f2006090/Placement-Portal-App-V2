@@ -57,3 +57,76 @@ def login():
         "auth_token": user.get_auth_token(),
         "role": user.roles[0].name
     }), 200
+
+@app.route('/api/register/student', methods=['POST'])
+def register_student():
+
+    credentials = request.get_json()
+
+    if app.security.datastore.find_user(email=credentials["email"]):
+        return jsonify({
+            "message": "User already exists"
+        }), 400
+
+    app.security.datastore.create_user(
+        email=credentials["email"],
+        username=credentials["username"],
+        password=hash_password(credentials["password"]),
+        roles=['student']
+    )
+
+    db.session.commit()
+
+    user = User.query.filter_by(email=credentials["email"]).first()
+
+    student = Student(
+        user_id=user.id,
+        name=credentials["username"],
+        branch=credentials["branch"],
+        cgpa=credentials["cgpa"],
+        year=credentials["year"]
+    )
+
+    db.session.add(student)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Student created successfully"
+    }), 201
+
+
+@app.route('/api/company/register', methods=['POST'])
+def register_company():
+
+    credentials = request.get_json()
+
+    if app.security.datastore.find_user(email=credentials["email"]):
+        return jsonify({
+            "message": "User already exists"
+        }), 400
+
+    app.security.datastore.create_user(
+        email=credentials["email"],
+        username=credentials["username"],
+        password=hash_password(credentials["password"]),
+        roles=['company']
+    )
+
+    db.session.commit()
+
+    user = User.query.filter_by(email=credentials["email"]).first()
+
+    company = Company(
+        user_id=user.id,
+        company_name=credentials["company_name"],
+        website=credentials["website"],
+        status='pending'
+    )
+
+    db.session.add(company)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Company registered successfully"
+    }), 201
+

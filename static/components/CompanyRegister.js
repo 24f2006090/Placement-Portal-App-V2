@@ -20,44 +20,44 @@ export default {
 
     methods: {
 
-        register() {
+    register() {
 
-            fetch(
+    fetch("/api/company/register", {
 
-                "/api/register/company",
+        method: "POST",
 
-                {
+        headers: {
+            "Content-Type": "application/json"
+        },
 
-                    method: "POST",
+        body: JSON.stringify(this.form)
 
-                    headers: {
+    })
 
-                        "Content-Type": "application/json"
+    .then(async response => {
 
-                    },
+        const data = await response.json();
 
-                    body: JSON.stringify(this.form)
-
-                }
-
-            )
-
-            .then(res => res.json())
-
-            .then(data => {
-
-                alert(data.message)
-
-                if(data.message == "Company registered successfully"){
-
-                    this.$router.push("/login")
-
-                }
-
-            })
-
+        if (!response.ok) {
+            alert(data.message);
+            return;
         }
 
+        alert(data.message);
+
+        this.$router.push("/login");
+
+    })
+
+    .catch(error => {
+
+        console.log(error);
+
+        alert("Registration Failed");
+
+    });
+
+}
     },
 
     template:`

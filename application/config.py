@@ -11,4 +11,14 @@ class LocalConfig(Config):
     WTF_CSRF_ENABLED = False
     SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authorization-token'
     SECURITY_TOKEN_AUTHENTICATION_ENABLED = True
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_HOST = "localhost"
+    CACHE_REDIS_PORT = 6379
+    CACHE_DEFAULT_TIMEOUT = 300
+    MAIL_SERVER = "smtp.gmail.com"
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = "devansh.burman16@gmail.com"
+    MAIL_PASSWORD = "----------------"
+    MAIL_DEFAULT_SENDER = "devansh.burman16@gmail.com"
 

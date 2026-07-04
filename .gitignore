@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+.env/
+
+# Celery
+celerybeat-schedule
+
+# Logs
+*.log
+
+# CSV Exports
+exports/
+
+# SQLite Database (Optional)
+instance/db.sqlite3

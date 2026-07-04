@@ -197,86 +197,82 @@ export default {
 
             this.$router.push('/login')
 
-        }
+        },
+        async exportCSV() {
+
+    const res = await fetch("/api/student/export", {
+        headers: this.getHeaders()
+    });
+
+    const data = await res.json();
+
+    alert(data.message);
+
+}
 
     },
 
-    template:`
+    template: `
 
-    <div class="container mt-4">
+<div class="container mt-4">
 
-        <div class="d-flex justify-content-between align-items-center">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-            <h2>
-                Welcome {{studentName}}
-            </h2>
+        <h2>
+            Welcome {{studentName}}
+        </h2>
 
-            <div>
-                <router-link
-                    class="btn btn-warning me-2"
-                    to="/student/profile">
+        <div>
 
-                        Edit Profile
+            <router-link
+                class="btn btn-warning me-2"
+                to="/student/profile">
 
-                </router-link>
+                Edit Profile
 
-                <router-link
+            </router-link>
+
+            <router-link
                 class="btn btn-primary me-2"
                 to="/student/history">
 
-                    History
+                History
 
-                </router-link>
+            </router-link>
 
-                <button
+            <button
+                class="btn btn-success me-2"
+                @click="exportCSV">
+
+                Export CSV
+
+            </button>
+
+            <button
                 class="btn btn-danger"
                 @click="logout">
 
-                    Logout
+                Logout
 
-                </button>
-
-            </div>
+            </button>
 
         </div>
 
-        <div class="row mt-4">
+    </div>
 
-            <div class="col-md-6">
+    <!-- Dashboard Stats -->
+    <div class="row">
 
-                <div class="card text-center">
+        <div class="col-md-6">
 
-                    <div class="card-body">
+            <div class="card text-center">
 
-                        <h5>
-                            Available Drives
-                        </h5>
+                <div class="card-body">
 
-                        <h3>
-                            {{stats.drives}}
-                        </h3>
+                    <h5>Available Drives</h5>
 
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-6">
-
-                <div class="card text-center">
-
-                    <div class="card-body">
-
-                        <h5>
-                            My Applications
-                        </h5>
-
-                        <h3>
-                            {{stats.applications}}
-                        </h3>
-
-                    </div>
+                    <h3>{{stats.drives}}</h3>
 
                 </div>
 
@@ -284,213 +280,261 @@ export default {
 
         </div>
 
-        <div class="card mt-4">
+        <div class="col-md-6">
 
-         <div class="card mt-4">
+            <div class="card text-center">
 
-    <div class="card-header">
+                <div class="card-body">
 
-        Resume
+                    <h5>My Applications</h5>
 
-    </div>
+                    <h3>{{stats.applications}}</h3>
 
-    <div class="card-body">
-
-        <input
-        type="file"
-        class="form-control mb-3"
-        @change="selectResume">
-
-        <button
-        class="btn btn-primary"
-        @click="uploadResume">
-
-            Upload Resume
-
-        </button>
-
-    </div>
-
-</div>
-
-            <div class="card-header">
-
-                Available Drives
+                </div>
 
             </div>
 
-            <div class="card-body">
+        </div>
 
-                <table class="table table-bordered">
+    </div>
 
-                    <thead>
+    <!-- Resume -->
+    <div class="card mt-4">
 
-                        <tr>
+        <div class="card-header">
 
-                            <th>Job Title</th>
-                            <th>Branch</th>
-                            <th>CGPA</th>
-                            <th>Action</th>
+            Resume
 
-                        </tr>
+        </div>
 
-                    </thead>
+        <div class="card-body">
 
-                    <tbody>
+            <input
+                type="file"
+                class="form-control mb-3"
+                @change="selectResume">
 
-                        <tr
+            <button
+                class="btn btn-primary"
+                @click="uploadResume">
+
+                Upload Resume
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Available Drives -->
+    <div class="card mt-4">
+
+        <div class="card-header">
+
+            Available Drives
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Job Title</th>
+                        <th>Branch</th>
+                        <th>CGPA</th>
+                        <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr
                         v-for="drive in drives"
                         :key="drive.id">
 
-                            <td>
-                                {{drive.job_title}}
-                            </td>
+                        <td>{{drive.job_title}}</td>
 
-                            <td>
-                                {{drive.elig_branch}}
-                            </td>
+                        <td>{{drive.elig_branch}}</td>
 
-                            <td>
-                                {{drive.min_cgpa}}
-                            </td>
+                        <td>{{drive.min_cgpa}}</td>
 
-                            <td>
+                        <td>
 
                             <button
                                 class="btn btn-info btn-sm me-2"
                                 @click="viewDrive(drive.id)">
-                                    View
-                                </button>
 
-                                <button
-                                    v-if="!appliedDriveIds.includes(drive.id)"
-                                    class="btn btn-success btn-sm"
-                                    @click="applyDrive(drive.id)">
+                                View
 
-                                        Apply
+                            </button>
 
-                                    </button>
+                            <button
+                                v-if="!appliedDriveIds.includes(drive.id)"
+                                class="btn btn-success btn-sm"
+                                @click="applyDrive(drive.id)">
 
-                                    <button
-                                    v-else
-                                    class="btn btn-secondary btn-sm"
-                                    disabled>
+                                Apply
 
-                                        Applied
+                            </button>
 
-                                    </button>
+                            <button
+                                v-else
+                                class="btn btn-secondary btn-sm"
+                                disabled>
 
-                            </td>
+                                Applied
 
-                        </tr>
+                            </button>
 
-                    </tbody>
+                        </td>
 
-                </table>
+                    </tr>
 
-            </div>
+                </tbody>
 
-        </div>
-
-        <div class="card mt-4">
-
-            <div class="card-header">
-
-                My Applications
-
-            </div>
-            <div class="card-body">
-
-                <table class="table table-bordered">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Drive</th>
-                            <th>Company</th>
-                            <th>Status</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        <tr
-                        v-for="app in applications"
-                        :key="app.application_id">
-
-                            <td>
-                                {{app.drive_name || app.drive_id}}
-                            </td>
-                            
-                            <td>
-                                {{app.company_name}}
-                            </td>
-
-                            <td>
-
-                            <span
-                            v-if="app.status=='applied'"
-                            class="badge bg-secondary">
-
-                            Applied
-
-                            </span>
-
-                            <span
-                            v-else-if="app.status=='selected'"
-                            class="badge bg-success">
-
-                            Selected
-
-                            </span>
-
-                            <span
-                            v-else-if="app.status=='rejected'"
-                            class="badge bg-danger">
-
-                            Rejected
-
-                            </span>
-
-                            <span
-                            v-else-if="app.status=='shortlisted'"
-                            class="badge bg-primary">
-
-                            Shortlisted
-
-                            </span>
-
-                             <span
-                            v-else-if="app.status=='waiting'"
-                            class="badge bg-warning text-dark">
-
-                            Waiting
-
-                            </span>
-
-                            <span
-                            v-else>
-
-                            {{app.status}}
-
-                            </span>
-
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
+            </table>
 
         </div>
 
     </div>
+
+    <!-- My Applications -->
+    <div class="card mt-4">
+
+        <div class="card-header">
+
+            My Applications
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Drive</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Interview</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr
+                        v-for="app in applications"
+                        :key="app.application_id">
+
+                        <td>{{app.drive_name || app.drive_id}}</td>
+
+                        <td>{{app.company_name}}</td>
+
+                        <td>
+
+                            <span
+                                v-if="app.status=='applied'"
+                                class="badge bg-secondary">
+
+                                Applied
+
+                            </span>
+
+                            <span
+                                v-else-if="app.status=='selected'"
+                                class="badge bg-success">
+
+                                Selected
+
+                            </span>
+
+                            <span
+                                v-else-if="app.status=='rejected'"
+                                class="badge bg-danger">
+
+                                Rejected
+
+                            </span>
+
+                            <span
+                                v-else-if="app.status=='shortlisted'"
+                                class="badge bg-primary">
+
+                                Shortlisted
+
+                            </span>
+
+                            <span
+                                v-else-if="app.status=='waiting'"
+                                class="badge bg-warning text-dark">
+
+                                Waiting
+
+                            </span>
+
+                            <span v-else>
+
+                                {{app.status}}
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span v-if="app.interview_date">
+
+                                <strong>Date:</strong>
+                                {{app.interview_date}}
+
+                                <br>
+
+                                <strong>Time:</strong>
+                                {{app.interview_time}}
+
+                                <br>
+
+                                <strong>Mode:</strong>
+                                {{app.interview_mode}}
+
+                                <br>
+
+                                <strong>Venue:</strong>
+                                {{app.interview_venue}}
+
+                            </span>
+
+                            <span
+                                v-else
+                                class="text-muted">
+
+                                Not Scheduled
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
 
     `
 }

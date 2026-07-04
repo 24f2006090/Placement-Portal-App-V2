@@ -101,6 +101,7 @@ export default {
                             <th>Drive</th>
                             <th>Company</th>
                             <th>Status</th>
+                            <th>Interview</th>
 
                         </tr>
 
@@ -167,6 +168,43 @@ export default {
                                     </span>
 
                                 </td>
+
+                                <td>
+
+                        <span
+                        v-if="app.interview_date">
+
+                            <strong>Date:</strong>
+                            {{app.interview_date}}
+
+                            <br>
+
+                            <strong>Time:</strong>
+                            {{app.interview_time}}
+
+                            <br>
+
+                            <strong>Mode:</strong>
+                            {{app.interview_mode}}
+
+                            <br>
+
+                            <strong>Venue:</strong>
+
+                            {{app.interview_venue}}
+
+                        </span>
+
+                        <span
+                        v-else
+                        class="text-muted">
+
+                            Not Scheduled
+
+                        </span>
+
+                    </td>
+
                         </tr>
 
                     </tbody>

@@ -1,16 +1,22 @@
+from datetime import datetime
 from unittest import result
 
 from flask_restful import Api, Resource
 from flask_security import auth_required, roles_required,current_user
 from flask import request
+from datetime import datetime
 from .models import Student, Company, PlacementDrive, Application,db
+from cache import cache
 
 api = Api()
 
 class AdminDashboardAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
+    @cache.cached(timeout=60)
+
     def get(self):
+        print("Fetching dashboard from database...")
         return {
             "students": Student.query.count(),
             "companies": Company.query.count(),
@@ -22,9 +28,51 @@ api.add_resource(
     '/api/admin/dashboard'
 )
 
+class PlacementStatisticsAPI(Resource):
+
+    @auth_required("token")
+    @roles_required("admin")
+    @cache.cached(timeout=60)
+    def get(self):
+
+        return {
+
+            "students": Student.query.count(),
+
+            "companies": Company.query.count(),
+
+            "drives": PlacementDrive.query.count(),
+
+            "applications": Application.query.count(),
+
+            "selected": Application.query.filter_by(
+                status="selected"
+            ).count(),
+
+            "shortlisted": Application.query.filter_by(
+                status="shortlisted"
+            ).count(),
+
+            "rejected": Application.query.filter_by(
+                status="rejected"
+            ).count(),
+
+            "waiting": Application.query.filter_by(
+                status="waiting"
+            ).count()
+
+        }, 200
+
+
+api.add_resource(
+    PlacementStatisticsAPI,
+    "/api/admin/statistics"
+)
+
 class CompanyListAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
+    @cache.cached(timeout=60)
     def get(self):
         companies = Company.query.all()
         return[
@@ -54,6 +102,7 @@ class CompanyApprovalAPI(Resource):
 
         company.status = "approved"
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Company approved successfully"
@@ -80,11 +129,13 @@ class DrivecreateAPI(Resource):
             min_cgpa=data["min_cgpa"],
             elig_branch=data["elig_branch"],
             elig_year=data["elig_year"],
-            status="pending"
+            status="pending",
+            deadline=datetime.strptime(data["deadline"], "%Y-%m-%d").date()
         )
 
         db.session.add(drive)
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Placement Drive Created"
@@ -98,6 +149,7 @@ class ListDrivesAPI(Resource):
 
     @auth_required("token")
     @roles_required("admin")
+    @cache.cached(timeout=60)
     def get(self):
 
         drives = PlacementDrive.query.all()
@@ -140,6 +192,7 @@ class DriveapproveAPI(Resource):
         drive.status = "approved"
 
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Drive approved"
@@ -154,6 +207,7 @@ class StudentDriveListAPI(Resource):
 
     @auth_required('token')
     @roles_required('student')
+    @cache.cached(timeout=60)
     def get(self):
 
         drives = PlacementDrive.query.filter_by(
@@ -227,6 +281,7 @@ class StudentProfileAPI(Resource):
         student.phone = data["phone"]
 
         db.session.commit()
+        cache.clear()
 
         return {
 
@@ -253,6 +308,7 @@ class StudentProfileAPI(Resource):
         student.phone = data["phone"]
 
         db.session.commit()
+        cache.clear()
 
         return {
 
@@ -318,6 +374,7 @@ class ApplyDriveAPI(Resource):
 
         db.session.add(application)
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Applied successfully"
@@ -332,6 +389,7 @@ class StudentApplicationsAPI(Resource):
 
     @auth_required('token')
     @roles_required('student')
+    @cache.cached(timeout=60)
     def get(self):
 
         student = Student.query.filter_by(
@@ -358,7 +416,11 @@ class StudentApplicationsAPI(Resource):
                 "drive_id": app.driveid,
                 "drive_name": drive.job_title,
                 "company_name": company.company_name,
-                "status": app.status
+                "status": app.status,
+                "interview_date": app.interview_date,
+                "interview_time": app.interview_time,
+                "interview_mode": app.interview_mode,
+                "interview_venue": app.interview_venue
 
             })
 
@@ -394,6 +456,7 @@ class UploadResumeAPI(Resource):
         student.resume = "/static/uploads/" + filename
 
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Resume uploaded successfully"
@@ -408,6 +471,7 @@ api.add_resource(
 class ApplicantsDriveAPI(Resource):
     @auth_required('token')
     @roles_required('company')
+    @cache.cached(timeout=60)
     def get(self, drive_id):
         applications = Application.query.filter_by(driveid=drive_id).all()
         result = []
@@ -446,6 +510,7 @@ class ApplicationStatusUpdateAPI(Resource):
             }, 404
         application.status = data["status"]
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Status updated"
@@ -479,6 +544,7 @@ class InterviewScheduleAPI(Resource):
         application.interview_venue = data["interview_venue"]
 
         db.session.commit()
+        cache.clear()
 
         return {
             "message":"Interview Scheduled Successfully"
@@ -493,6 +559,7 @@ class AllApplicationsAPI(Resource):
 
     @auth_required('token')
     @roles_required('admin')
+    @cache.cached(timeout=60)
     def get(self):
 
         applications = Application.query.all()
@@ -524,6 +591,7 @@ api.add_resource(
 class StudentListAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
+    @cache.cached(timeout=60)
     def get(self):
         students = Student.query.all()
 
@@ -589,6 +657,7 @@ class CompanyDriveAPI(Resource):
 
     @auth_required('token')
     @roles_required('company')
+    @cache.cached(timeout=60)
     def get(self):
         company = Company.query.filter_by(user_id=current_user.id).first()
         drives = PlacementDrive.query.filter_by(company_id=company.id).all()
@@ -641,6 +710,7 @@ class CompanyProfileAPI(Resource):
         company.website = data["website"]
 
         db.session.commit()
+        cache.clear()
 
         return {
 
@@ -655,6 +725,7 @@ api.add_resource(
 
 class DriveDetailsAPI(Resource):
     @auth_required('token')
+    @cache.cached(timeout=60)
     def get(self, drive_id):
         drive = PlacementDrive.query.get(drive_id)
         if not drive:
@@ -717,6 +788,7 @@ class DeleteDriveAPI(Resource):
 
         db.session.delete(drive)
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Drive deleted"
@@ -742,6 +814,7 @@ class CompleteDriveAPI(Resource):
         drive.status = "completed"
 
         db.session.commit()
+        cache.clear()
 
         return {
             "message": "Drive marked completed"
@@ -784,6 +857,7 @@ class BlacklistCompanyAPI(Resource):
                 app.status = "cancelled"
 
         db.session.commit()
+        cache.clear()
 
         return {
             "message":"Company blacklisted"
@@ -815,7 +889,7 @@ class BlacklistStudentAPI(Resource):
             app.status = "cancelled"
 
         db.session.commit()
-
+        cache.clear()
         return {
             "message":"Student blacklisted"
         },200
@@ -851,4 +925,29 @@ class ApplicationDetailsAPI(Resource):
 api.add_resource(
     ApplicationDetailsAPI,
     '/api/application/<int:application_id>'
+)
+
+
+class ExportCSVAPI(Resource):
+
+    @auth_required("token")
+    @roles_required("student")
+    def get(self):
+
+        from tasks import export_student_applications
+
+        student = Student.query.filter_by(
+            user_id=current_user.id
+        ).first()
+
+        task = export_student_applications.delay(student.id)
+
+        return {
+            "message": "Export Started",
+            "task_id": task.id
+        }, 202
+
+api.add_resource(
+    ExportCSVAPI,
+    "/api/student/export"
 )

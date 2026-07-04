@@ -18,7 +18,8 @@ export default {
                 description: "",
                 min_cgpa: "",
                 elig_branch: "",
-                elig_year: ""
+                elig_year: "",
+                deadline:""
             }
 
         }
@@ -83,7 +84,8 @@ export default {
                     description: "",
                     min_cgpa: "",
                     elig_branch: "",
-                    elig_year: ""
+                    elig_year: "",
+                    deadline:''
 
                 }
 
@@ -277,6 +279,21 @@ export default {
             class="form-control mb-3"
             placeholder="Eligible Year"
             v-model="driveForm.elig_year">
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Application Deadline
+
+                </label>
+
+               <input
+                type="date"
+                class="form-control"
+                v-model="driveForm.deadline">
+
+            </div>
 
             <button
             class="btn btn-success"

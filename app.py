@@ -5,14 +5,17 @@ from application.config import LocalConfig
 from flask_security import Security, SQLAlchemyUserDatastore    
 from flask_security import hash_password
 from application.resources import api
-
+from cache import cache
+from mail import mail
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(LocalConfig)
     db.init_app(app)
+    cache.init_app(app)
     api.init_app(app)
-
+    mail.init_app(app)
+    
     datastore = SQLAlchemyUserDatastore(db, User, Role)
     app.security = Security(app, datastore)
 
@@ -37,6 +40,7 @@ with app.app_context():
         app.security.datastore.create_user(email='student@user.com',password=hash_password('student@1234'),username='student',roles=['student'])
     
     db.session.commit()
+
 
 if __name__ == '__main__':    
     app.run() 

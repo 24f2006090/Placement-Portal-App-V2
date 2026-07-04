@@ -4,11 +4,27 @@ export default{
 
         return{
 
-            driveId:null,
-            drive:{},
-            applicants:[]
+    driveId:null,
 
-        }
+    drive:{},
+
+    applicants:[],
+
+    interviewForm:{
+
+        application_id:null,
+
+        interview_date:"",
+
+        interview_time:"",
+
+        interview_mode:"Online",
+
+        interview_venue:""
+
+    }
+
+}
 
     },
 
@@ -118,6 +134,57 @@ export default{
     })
 
 },
+
+openInterviewForm(student){
+
+    this.interviewForm.application_id = student.application_id
+
+    this.interviewForm.interview_date = ""
+
+    this.interviewForm.interview_time = ""
+
+    this.interviewForm.interview_mode = "Online"
+
+    this.interviewForm.interview_venue = ""
+
+},
+
+scheduleInterview(){
+
+    fetch(
+
+        `/api/application/${this.interviewForm.application_id}/schedule`,
+
+        {
+
+            method:"PUT",
+
+            headers:{
+
+                ...this.getHeaders(),
+
+                "Content-Type":"application/json"
+
+            },
+
+            body:JSON.stringify(this.interviewForm)
+
+        }
+
+    )
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        alert(data.message)
+
+        this.loadApplicants()
+
+    })
+
+},
+
     viewResume(resume){
 
     if(!resume){
@@ -264,6 +331,22 @@ Shortlist
     </button>
 
     <button
+
+        v-if="student.status=='shortlisted'"
+
+        class="btn btn-dark btn-sm"
+
+        data-bs-toggle="modal"
+
+        data-bs-target="#interviewModal"
+
+        @click="openInterviewForm(student)">
+
+        Schedule Interview
+
+    </button>
+
+    <button
     class="btn btn-warning btn-sm me-1"
     @click="updateStatus(student.application_id,'waiting')"
     :disabled="student.status=='waiting'">
@@ -297,6 +380,86 @@ Shortlist
 </tbody>
 
 </table>
+
+        <div
+        class="modal fade"
+        id="interviewModal"
+        tabindex="-1">
+
+        <div class="modal-dialog">
+
+        <div class="modal-content">
+
+        <div class="modal-header">
+
+        <h5>
+
+        Schedule Interview
+
+        </h5>
+
+        <button
+        class="btn-close"
+        data-bs-dismiss="modal">
+        </button>
+
+        </div>
+
+        <div class="modal-body">
+
+        <input
+        type="date"
+        class="form-control mb-2"
+        v-model="interviewForm.interview_date">
+
+        <input
+        type="time"
+        class="form-control mb-2"
+        v-model="interviewForm.interview_time">
+
+        <select
+        class="form-control mb-2"
+        v-model="interviewForm.interview_mode">
+
+        <option>
+
+        Online
+
+        </option>
+
+        <option>
+
+        Offline
+
+        </option>
+
+        </select>
+
+        <input
+        class="form-control"
+        placeholder="Venue / Google Meet Link"
+        v-model="interviewForm.interview_venue">
+
+        </div>
+
+        <div class="modal-footer">
+
+        <button
+        class="btn btn-success"
+        @click="scheduleInterview"
+        data-bs-dismiss="modal">
+
+        Save
+
+        </button>
+
+        </div>
+
+        </div>
+
+        </div>
+
+        </div>
 
 </div>
 

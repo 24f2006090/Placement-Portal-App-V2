@@ -46,6 +46,7 @@ class PlacementDrive(db.Model):
     min_cgpa = db.Column(db.Float)
     elig_branch = db.Column(db.String(100))
     elig_year = db.Column(db.Integer)
+    deadline = db.Column(db.Date)
     status = db.Column(db.String(20),default='pending')
 
 class Application(db.Model):

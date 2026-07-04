@@ -9,7 +9,17 @@ export default {
             students: [],
 
             studentSearch:'',
-            driveSearch:''
+            driveSearch:'',
+            statistics:{
+                students:0,
+                companies:0,
+                drives:0,
+                applications:0,
+                selected:0,
+                shortlisted:0,
+                rejected:0,
+                waiting:0
+            },
     }
 },
    computed:{
@@ -48,6 +58,7 @@ pendingDrives(){
         this.loadDrives()
         this.loadApplications()
         this.loadStudents()
+        this.loadStatistics()
     },
 methods: {
 
@@ -57,7 +68,7 @@ methods: {
             localStorage.getItem('auth_token')
         }
     },
-loadDashboard() {
+    loadDashboard() {
 
     fetch('/api/admin/dashboard',{
         headers:this.getHeaders()
@@ -111,6 +122,29 @@ loadDashboard() {
             this.students = data
         })
     },
+    loadStatistics(){
+
+    fetch(
+
+        "/api/admin/statistics",
+
+        {
+
+            headers:this.getHeaders()
+
+        }
+
+    )
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        this.statistics=data
+
+    })
+
+},
 
     approveCompany(id){
 
@@ -270,50 +304,8 @@ loadDashboard() {
 <div class="container mt-4">
 
     <h2 class="mb-4">
-        Admin Dashboard
+        Welcome Admin
     </h2>
-
-    <div class="row">
-
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6>Students</h6>
-                    <h3>{{stats.students}}</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6>Companies</h6>
-                    <h3>{{stats.companies}}</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6>Drives</h6>
-                    <h3>{{stats.drives}}</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6>Applications</h6>
-                    <h3>{{stats.applications}}</h3>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="card">
 
     <div class="row mb-4">
 
@@ -361,9 +353,132 @@ loadDashboard() {
 
 </div>
 
-        <div class="card-header">
-            <h5 class="mb-0">Welcome Admin</h5>
+
+    <div class="row">
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6>Students</h6>
+                    <h3>{{stats.students}}</h3>
+                </div>
+            </div>
         </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6>Companies</h6>
+                    <h3>{{stats.companies}}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6>Drives</h6>
+                    <h3>{{stats.drives}}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6>Applications</h6>
+                    <h3>{{stats.applications}}</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+    <div class="row mt-4">
+
+    <div class="col-md-3">
+
+    <div class="card text-center border-success">
+
+    <div class="card-body">
+
+    <h6>Selected</h6>
+
+    <h3 class="text-success">
+
+    {{statistics.selected}}
+
+    </h3>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+    <div class="card text-center border-primary">
+
+    <div class="card-body">
+
+    <h6>Shortlisted</h6>
+
+    <h3 class="text-primary">
+
+    {{statistics.shortlisted}}
+
+    </h3>
+
+    </div>
+
+    </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+    <div class="card text-center border-warning">
+
+    <div class="card-body">
+
+    <h6>Waiting</h6>
+
+    <h3 class="text-warning">
+
+    {{statistics.waiting}}
+
+    </h3>
+
+    </div>
+
+    </div>
+
+    </div>
+
+<div class="col-md-3">
+
+<div class="card text-center border-danger">
+
+<div class="card-body">
+
+<h6>Rejected</h6>
+
+<h3 class="text-danger">
+
+{{statistics.rejected}}
+
+</h3>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
         <div class="card-body">
 
