@@ -200,24 +200,53 @@ export default {
         },
         async exportCSV() {
 
-    const res = await fetch("/api/student/export", {
-        headers: this.getHeaders()
-    });
+        const res = await fetch("/api/student/export", {
+            headers: this.getHeaders()
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    alert(data.message);
+        alert(data.message);
 
-}
+        const taskId = data.task_id;
+
+        const interval = setInterval(async () => {
+
+            const statusRes = await fetch(
+                `/api/student/export/status/${taskId}`,
+                {
+                    headers: this.getHeaders()
+                }
+            );
+
+            const statusData = await statusRes.json();
+
+            if (statusData.status === "completed") {
+
+                clearInterval(interval);
+
+                alert("CSV Export Completed");
+
+            }
+
+            if (statusData.status === "failed") {
+
+                clearInterval(interval);
+
+                alert("CSV Export Failed");
+
+            }
+
+        }, 2000);
+
+    }
 
     },
-
     template: `
 
 <div class="container mt-4">
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="bg-primary text-white p-4 rounded mb-4 d-flex justify-content-between align-items-center mb-4">
 
         <h2>
             Welcome {{studentName}}
@@ -234,7 +263,7 @@ export default {
             </router-link>
 
             <router-link
-                class="btn btn-primary me-2"
+                class="btn btn-info me-2"
                 to="/student/history">
 
                 History
@@ -261,7 +290,6 @@ export default {
 
     </div>
 
-    <!-- Dashboard Stats -->
     <div class="row">
 
         <div class="col-md-6">
@@ -298,7 +326,6 @@ export default {
 
     </div>
 
-    <!-- Resume -->
     <div class="card mt-4">
 
         <div class="card-header">
@@ -326,7 +353,6 @@ export default {
 
     </div>
 
-    <!-- Available Drives -->
     <div class="card mt-4">
 
         <div class="card-header">
@@ -404,7 +430,6 @@ export default {
 
     </div>
 
-    <!-- My Applications -->
     <div class="card mt-4">
 
         <div class="card-header">

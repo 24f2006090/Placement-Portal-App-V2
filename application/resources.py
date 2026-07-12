@@ -149,6 +149,17 @@ class DrivecreateAPI(Resource):
         company = Company.query.filter_by(
             user_id=company_user
         ).first()
+
+        if not company:
+            return {
+                "message": "Company profile not found"
+            }, 404
+
+        if company.status != "approved":
+            return {
+                "message": "Company must be approved by admin before creating a placement drive"
+            }, 403
+
         drive = PlacementDrive(
             company_id=company.id,
             job_title=data["job_title"],
@@ -228,6 +239,33 @@ class DriveapproveAPI(Resource):
 api.add_resource(
     DriveapproveAPI,
     '/api/drive/<int:drive_id>/approve'
+)
+
+class DriverejectAPI(Resource):
+
+    @auth_required('token')
+    @roles_required('admin')
+    def put(self, drive_id):
+
+        drive = PlacementDrive.query.get(drive_id)
+
+        if not drive:
+            return {
+                "message": "Drive not found"
+            }, 404
+
+        drive.status = "rejected"
+
+        db.session.commit()
+        cache.clear()
+
+        return {
+            "message": "Drive rejected"
+        }, 200
+
+api.add_resource(
+    DriverejectAPI,
+    '/api/drive/<int:drive_id>/reject'
 )
 
 class StudentDriveListAPI(Resource):
@@ -940,9 +978,12 @@ class ExportCSVAPI(Resource):
 
         from tasks import export_student_applications
 
-        student = Student.query.filter_by(
-            user_id=current_user.id
-        ).first()
+        student = Student.query.filter_by(user_id=current_user.id).first()
+
+        if not student:
+            return {
+                "message": "Student profile not found"
+            }, 404
 
         task = export_student_applications.delay(student.id)
 
@@ -954,4 +995,42 @@ class ExportCSVAPI(Resource):
 api.add_resource(
     ExportCSVAPI,
     "/api/student/export"
+)
+
+class ExportStatusAPI(Resource):
+
+    @auth_required("token")
+    @roles_required("student")
+    def get(self, task_id):
+
+        from tasks import export_student_applications
+
+        task = export_student_applications.AsyncResult(task_id)
+
+        if task.state == "PENDING":
+            return {
+                "status": "pending",
+                "message": "Export is still processing"
+            }, 200
+
+        elif task.state == "SUCCESS":
+            return {
+                "status": "completed",
+                "message": "CSV export completed",
+                "result": task.result
+            }, 200
+
+        elif task.state == "FAILURE":
+            return {
+                "status": "failed",
+                "message": str(task.info)
+            }, 500
+
+        return {
+            "status": task.state.lower()
+        }, 200
+    
+api.add_resource(
+    ExportStatusAPI,
+    "/api/student/export/status/<string:task_id>"
 )

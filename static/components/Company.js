@@ -379,6 +379,14 @@ export default {
                             </span>
 
                             <span
+                            v-if="drive.status=='rejected'"
+                            class="badge bg-danger">
+
+                                Rejected
+
+                            </span>
+
+                            <span
                             v-else-if="drive.status=='pending'"
                             class="badge bg-warning text-dark">
 

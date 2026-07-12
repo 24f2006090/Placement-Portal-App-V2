@@ -1,9 +1,9 @@
-import pandas as pd
 import os
+import csv
 from celery_config import celery
 from app import create_app
 from application.models import Student, Application, PlacementDrive, Company
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from flask_mail import Message
 from mail import mail
 from application.models import User
@@ -17,34 +17,60 @@ def export_student_applications(student_id):
 
         student = Student.query.get(student_id)
 
+        if not student:
+            return {
+                "status": "failed",
+                "message": "Student not found"
+            }
+
         applications = Application.query.filter_by(
             student_id=student_id
         ).all()
-
-        data = []
-
-        for app_obj in applications:
-
-            drive = PlacementDrive.query.get(app_obj.driveid)
-            company = Company.query.get(drive.company_id)
-
-            data.append({
-                "Student ID": student.id,
-                "Student Name": student.name,
-                "Company": company.company_name,
-                "Drive Title": drive.job_title,
-                "Application Status": app_obj.status,
-                "Application Date": getattr(app_obj, "created_at", "")
-            })
-        df = pd.DataFrame(data)
 
         os.makedirs("exports", exist_ok=True)
 
         filename = f"exports/student_{student_id}.csv"
 
-        df.to_csv(filename, index=False)
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
 
-        return filename
+            fieldnames = [
+                "Student ID",
+                "Student Name",
+                "Company",
+                "Drive Title",
+                "Application Status",
+                "Application Date"
+            ]
+
+            writer = csv.DictWriter(
+                csvfile,
+                fieldnames=fieldnames
+            )
+
+            writer.writeheader()
+
+            for app_obj in applications:
+
+                drive = PlacementDrive.query.get(app_obj.driveid)
+
+                company = Company.query.get(drive.company_id)
+
+                writer.writerow({
+                    "Student ID": student.id,
+                    "Student Name": student.name,
+                    "Company": company.company_name,
+                    "Drive Title": drive.job_title,
+                    "Application Status": app_obj.status,
+                    "Application Date": (app_obj.application_date.strftime("%Y-%m-%d %H:%M:%S")
+                        if app_obj.application_date 
+                        else ""
+                    )
+                })
+
+        return {
+            "status": "completed",
+            "filename": filename
+        }
     
 @celery.task
 def send_deadline_reminders():
@@ -103,42 +129,62 @@ def monthly_activity_report():
 
     with app.app_context():
 
-        total_drives = PlacementDrive.query.count()
+        today = datetime.now()
+    
+        current_month_start = today.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
 
-        total_applications = Application.query.count()
+        prev_month_end = current_month_start - timedelta(days=1)
 
-        total_selected = Application.query.filter_by(
-            status="selected"
+        prev_month_start = prev_month_end.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+        total_drives = PlacementDrive.query.filter(
+            PlacementDrive.created_at >= prev_month_start,
+            PlacementDrive.created_at < current_month_start
         ).count()
+
+        total_applications = Application.query.filter(
+            Application.application_date >= prev_month_start,
+            Application.application_date < current_month_start
+        ).count()
+
+        total_selected = Application.query.filter(
+            Application.status == "selected",
+            Application.application_date >= prev_month_start,
+            Application.application_date < current_month_start).count()
+
+        report_month = prev_month_start.strftime("%B %Y")
 
         html = f"""
 
-        <h2>Placement Activity Report</h2>
+        <h2>Placement Activity Report - {report_month}</h2>
 
         <table border="1" cellpadding="8">
 
             <tr>
-
                 <th>Total Drives</th>
-
                 <td>{total_drives}</td>
-
             </tr>
 
             <tr>
-
                 <th>Total Applications</th>
-
                 <td>{total_applications}</td>
-
             </tr>
 
             <tr>
-
                 <th>Total Selected</th>
-
                 <td>{total_selected}</td>
-
             </tr>
 
         </table>
@@ -146,15 +192,12 @@ def monthly_activity_report():
         """
 
         msg = Message(
-
-            subject="Monthly Placement Report",
-
+            subject=f"Monthly Placement Report - {report_month}",
             recipients=["user@admin.com"]
-
         )
 
         msg.html = html
 
         mail.send(msg)
 
-        print("Monthly Report Sent")
+        print(f"Monthly Report Sent for {report_month}")

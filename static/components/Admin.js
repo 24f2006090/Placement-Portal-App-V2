@@ -208,6 +208,23 @@ logout() {
 
         })
     },
+    rejectDrive(driveId) {
+
+    fetch(`/api/drive/${driveId}/reject`, {
+
+        method: "PUT",
+
+        headers: this.getHeaders()  
+    })
+    .then(res=>res.json())
+        .then(data=>{
+
+            alert(data.message)
+
+            this.loadDrives()
+
+        })
+    },
 
    searchStudents() {
 
@@ -676,6 +693,14 @@ logout() {
                 @click="approveDrive(drive.id)">
 
                     Approve
+
+                </button>
+
+                <button
+                class="btn btn-danger btn-sm"
+                @click="rejectDrive(drive.id)">
+
+                    Reject 
 
                 </button>
 

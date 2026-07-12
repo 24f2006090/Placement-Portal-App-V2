@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import UserMixin, RoleMixin
+from datetime import datetime
 db = SQLAlchemy()
 
 class User(db.Model, UserMixin):
@@ -48,6 +49,7 @@ class PlacementDrive(db.Model):
     elig_year = db.Column(db.Integer)
     deadline = db.Column(db.Date)
     status = db.Column(db.String(20),default='pending')
+    created_at = db.Column(db.DateTime,default=datetime.now)
 
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,3 +60,4 @@ class Application(db.Model):
     interview_time = db.Column(db.String(20))
     interview_mode = db.Column(db.String(20))
     interview_venue = db.Column(db.String(200))
+    application_date = db.Column(db.DateTime,default=datetime.now)
