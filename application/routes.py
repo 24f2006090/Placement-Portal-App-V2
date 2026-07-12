@@ -35,6 +35,7 @@ def company():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
+
     user = User.query.filter_by(email=data["email"]).first()
 
     if not user:
@@ -49,6 +50,39 @@ def login():
         return jsonify({
             "message": "Invalid Password"
         }), 401
+
+    if not user.active:
+
+        return jsonify({
+            "message": "Your account has been blacklisted"
+        }), 403
+
+    if user.has_role("company"):
+
+        company = Company.query.filter_by(
+            user_id=user.id
+        ).first()
+
+        if not company:
+            return jsonify({
+                "message": "Company profile not found"
+            }), 404
+
+        if company.status == "rejected":
+            return jsonify({
+                "message": "Your Company Account got Rejected. Please contact Admin for more details"
+            }), 403
+
+        if company.status == "blacklisted":
+            return jsonify({
+                "message": "Your Company Account is Blocked. Please contact Admin for more details"
+            }), 403
+
+        if company.status != "approved":
+            return jsonify({
+                "message": "Your Company Account is waiting for Admin approval"
+            }), 403
+
 
     return jsonify({
         "message": "Login Successful",

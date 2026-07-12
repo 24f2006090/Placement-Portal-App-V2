@@ -7,6 +7,7 @@ export default {
 
             drives: [],
             applicants: [],
+            company:{},
 
             stats: {
                 drives: 0,
@@ -29,6 +30,7 @@ export default {
     mounted() {
 
         this.loadDrives()
+        this.loadCompany()
 
     },
 
@@ -42,6 +44,24 @@ export default {
             }
 
         },
+
+        loadCompany() {
+
+    fetch("/api/company/profile", {
+
+        headers: this.getHeaders()
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        this.company = data
+
+    })
+
+},
 
         loadDrives() {
 
@@ -174,11 +194,11 @@ export default {
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="bg-primary text-white p-4 rounded mb-4 d-flex justify-content-between align-items-center">
 
         <h2>
 
-            Company Dashboard
+            <h2>Welcome {{ company.company_name }}</h2> 
 
         </h2>
 

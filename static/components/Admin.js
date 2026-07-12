@@ -145,6 +145,15 @@ methods: {
     })
 
 },
+logout() {
+
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("role")
+    localStorage.removeItem("user_id")
+
+    this.$router.push("/login")
+
+},
 
     approveCompany(id){
 
@@ -162,6 +171,27 @@ methods: {
 
         })
     },
+    rejectCompany(companyId) {
+
+    fetch(`/api/company/reject/${companyId}`, {
+
+        method: "PUT",
+
+        headers: this.getHeaders()
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        alert(data.message)
+
+        this.loadCompanies()
+
+    })
+
+},
 
     approveDrive(id){
 
@@ -179,19 +209,20 @@ methods: {
         })
     },
 
-    searchStudents(){
+   searchStudents() {
 
-        fetch(
-            `/api/search/students?branch=${this.studentSearch}`,
-            {
-                headers:this.getHeaders()
-            }
-        )
-        .then(res=>res.json())
-        .then(data=>{
-            this.students = data
-        })
-    },
+    fetch(
+        `/api/search/students?query=${encodeURIComponent(this.studentSearch)}`,
+        {
+            headers: this.getHeaders()
+        }
+    )
+    .then(res => res.json())
+    .then(data => {
+        this.students = data
+    })
+
+},
 
     searchDrives(){
 
@@ -303,9 +334,23 @@ methods: {
 
 <div class="container mt-4">
 
-    <h2 class="mb-4">
+   <div class="bg-primary text-white p-4 rounded mb-4 d-flex justify-content-between align-items-center">
+
+    <h2>
         Welcome Admin
     </h2>
+
+    <button
+        class="btn btn-danger"
+        @click="logout">
+
+        Logout
+
+    </button>
+
+</div>
+
+    
 
     <div class="row mb-4">
 
@@ -313,7 +358,7 @@ methods: {
 
         <input
         class="form-control"
-        placeholder="Search Student Branch"
+        placeholder="Search Student by Name or Branch"
         v-model="studentSearch">
 
     </div>
@@ -327,6 +372,7 @@ methods: {
             Search Student
 
         </button>
+
 
     </div>
 
@@ -349,10 +395,10 @@ methods: {
 
         </button>
 
+
     </div>
-
+        
 </div>
-
 
     <div class="row">
 
@@ -482,7 +528,6 @@ methods: {
 
         <div class="card-body">
 
-            <!-- Registered Companies -->
 
             <h5>Registered Companies</h5>
 
@@ -544,7 +589,6 @@ methods: {
                 </tbody>
 
             </table>
-<!-- Pending Company Approval -->
 
 <h5 class="mt-4">
 
@@ -565,24 +609,34 @@ methods: {
     <tbody>
 
         <tr
-        v-for="company in pendingCompanies"
-        :key="company.id">
+    v-for="company in pendingCompanies"
+    :key="company.id">
 
-            <td>{{company.company_name}}</td>
+    <td>
+        {{company.company_name}}
+    </td>
 
-            <td width="150">
+    <td width="200">
 
-                <button
-                class="btn btn-success btn-sm"
-                @click="approveCompany(company.id)">
+        <button
+            class="btn btn-success btn-sm me-2"
+            @click="approveCompany(company.id)">
 
-                    Approve
+            Approve
 
-                </button>
+        </button>
 
-            </td>
+        <button
+            class="btn btn-danger btn-sm"
+            @click="rejectCompany(company.id)">
 
-        </tr>
+            Reject
+
+        </button>
+
+    </td>
+
+</tr>
 
     </tbody>
 
@@ -682,9 +736,6 @@ methods: {
 
             </table>
 
-
-            <!-- Student Applications -->
-
             <h5 class="mt-4">
                 Student Applications
             </h5>
@@ -715,7 +766,64 @@ methods: {
 
                         <td>{{app.drive_name}}</td>
 
-                        <td>{{app.status}}</td>
+                        <td>
+
+                            <span
+                            v-if="app.status=='selected'"
+                            class="badge bg-success">
+
+                                Selected
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='shortlisted'"
+                            class="badge bg-warning">
+
+                                Shortlisted
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='applied'"
+                            class="badge bg-primary">
+
+                                Applied
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='rejected'"
+                            class="badge bg-danger text-light">
+
+                                Rejected
+
+                            </span>
+
+                            <span
+                            v-else-if="app.status=='cancelled'"
+                            class="badge bg-danger text-light">
+
+                                Cancelled
+
+                            </span>
+
+                             <span
+                            v-else-if="app.status=='waiting'"
+                            class="badge bg-secondary text-light">
+
+                                Waiting
+
+                            </span>
+
+                            <span
+                            v-else>
+
+                                {{app.status}}
+
+                            </span>
+
+                        </td>
 
                         <td>
 

@@ -5,7 +5,7 @@ from flask_restful import Api, Resource
 from flask_security import auth_required, roles_required,current_user
 from flask import request
 from datetime import datetime
-from .models import Student, Company, PlacementDrive, Application,db
+from .models import Student, Company, PlacementDrive, Application, User,db
 from cache import cache
 
 api = Api()
@@ -16,10 +16,9 @@ class AdminDashboardAPI(Resource):
     @cache.cached(timeout=60)
 
     def get(self):
-        print("Fetching dashboard from database...")
         return {
             "students": Student.query.count(),
-            "companies": Company.query.count(),
+            "companies": Company.query.filter_by(status="approved").count(),
             "drives": PlacementDrive.query.count(),
             "applications": Application.query.count()
         }
@@ -39,7 +38,7 @@ class PlacementStatisticsAPI(Resource):
 
             "students": Student.query.count(),
 
-            "companies": Company.query.count(),
+            "companies": Company.query.filter_by(status="approved").count(),
 
             "drives": PlacementDrive.query.count(),
 
@@ -111,6 +110,34 @@ class CompanyApprovalAPI(Resource):
 api.add_resource(
     CompanyApprovalAPI,
     '/api/company/<int:company_id>/approve'
+)
+
+class RejectCompanyAPI(Resource):
+
+    @auth_required("token")
+    @roles_required("admin")
+    def put(self, company_id):
+
+        company = Company.query.get(company_id)
+
+        if not company:
+            return {
+                "message": "Company not found"
+            }, 404
+
+        company.status = "rejected"
+
+        db.session.commit()
+
+        cache.clear()
+
+        return {
+            "message": "Company rejected successfully"
+        }, 200
+    
+api.add_resource(
+    RejectCompanyAPI,
+    "/api/company/reject/<int:company_id>"
 )
 
 class DrivecreateAPI(Resource):
@@ -612,20 +639,28 @@ api.add_resource(
 )
 
 class SearchStudentAPI(Resource):
+
     @auth_required('token')
     @roles_required('admin')
     def get(self):
-        branch = request.args.get('branch')
-        students = Student.query.filter_by(branch=branch).all()
 
-        return [
-            {
-                "id": s.id,
-                "cgpa": s.cgpa,
-                "year": s.year
-            }
-            for s in students
-        ]
+        query = request.args.get("query", "").strip()
+
+        students = Student.query.filter(db.or_(Student.name.ilike(f"%{query}%"),Student.branch.ilike(f"%{query}%"))).all()
+
+        result = []
+
+        for student in students:
+
+            result.append({
+                "id": student.id,
+                "name": student.name,
+                "branch": student.branch,
+                "cgpa": student.cgpa,
+                "year": student.year
+            })
+
+        return result, 200
 
 api.add_resource(
     SearchStudentAPI,
@@ -826,48 +861,6 @@ api.add_resource(
     '/api/drive/<int:drive_id>/complete'
 )
 
-class BlacklistCompanyAPI(Resource):
-
-    @auth_required('token')
-    @roles_required('admin')
-    def put(self, company_id):
-
-        company = Company.query.get(company_id)
-
-        if not company:
-            return {
-                "message":"Company not found"
-            },404
-
-        company.status = "blacklisted"
-
-        drives = PlacementDrive.query.filter_by(
-            company_id=company.id
-        ).all()
-
-        for drive in drives:
-
-            drive.status = "cancelled"
-
-            applications = Application.query.filter_by(
-                driveid=drive.id
-            ).all()
-
-            for app in applications:
-                app.status = "cancelled"
-
-        db.session.commit()
-        cache.clear()
-
-        return {
-            "message":"Company blacklisted"
-        },200
-
-api.add_resource(
-    BlacklistCompanyAPI,
-    '/api/company/<int:company_id>/blacklist'
-)
-
 class BlacklistStudentAPI(Resource):
 
     @auth_required('token')
@@ -878,8 +871,17 @@ class BlacklistStudentAPI(Resource):
 
         if not student:
             return {
-                "message":"Student not found"
-            },404
+                "message": "Student not found"
+            }, 404
+
+        user = User.query.get(student.user_id)
+
+        if not user:
+            return {
+                "message": "User account not found"
+            }, 404
+
+        user.active = False
 
         applications = Application.query.filter_by(
             student_id=student.id
@@ -889,10 +891,12 @@ class BlacklistStudentAPI(Resource):
             app.status = "cancelled"
 
         db.session.commit()
+
         cache.clear()
+
         return {
-            "message":"Student blacklisted"
-        },200
+            "message": "Student blacklisted successfully"
+        }, 200
 
 api.add_resource(
     BlacklistStudentAPI,
