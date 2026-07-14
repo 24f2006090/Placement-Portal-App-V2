@@ -1,15 +1,10 @@
-from datetime import datetime
-from unittest import result
-
+from datetime import datetime,date
 from flask_restful import Api, Resource
 from flask_security import auth_required, roles_required,current_user
 from flask import request
-from datetime import datetime
 from .models import Student, Company, PlacementDrive, Application, User,db
 from cache import cache
-
 api = Api()
-
 class AdminDashboardAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
@@ -33,33 +28,23 @@ class PlacementStatisticsAPI(Resource):
     @roles_required("admin")
     @cache.cached(timeout=60)
     def get(self):
-
         return {
-
             "students": Student.query.count(),
-
             "companies": Company.query.filter_by(status="approved").count(),
-
             "drives": PlacementDrive.query.count(),
-
             "applications": Application.query.count(),
-
             "selected": Application.query.filter_by(
                 status="selected"
             ).count(),
-
             "shortlisted": Application.query.filter_by(
                 status="shortlisted"
             ).count(),
-
             "rejected": Application.query.filter_by(
                 status="rejected"
             ).count(),
-
             "waiting": Application.query.filter_by(
                 status="waiting"
             ).count()
-
         }, 200
 
 
@@ -83,7 +68,7 @@ class CompanyListAPI(Resource):
             }
             for c in companies
         ]
-    
+
 api.add_resource(
     CompanyListAPI,
     '/api/companies'
@@ -98,49 +83,41 @@ class CompanyApprovalAPI(Resource):
             return {
                 "message": "Company not found"
             }, 404
-
         company.status = "approved"
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Company approved successfully"
         }
-    
+
 api.add_resource(
     CompanyApprovalAPI,
     '/api/company/<int:company_id>/approve'
 )
 
-class RejectCompanyAPI(Resource):
+class CompanyRejectAPI(Resource):
 
     @auth_required("token")
     @roles_required("admin")
     def put(self, company_id):
-
         company = Company.query.get(company_id)
-
         if not company:
             return {
                 "message": "Company not found"
             }, 404
-
         company.status = "rejected"
-
         db.session.commit()
-
         cache.clear()
-
         return {
             "message": "Company rejected successfully"
         }, 200
-    
+
 api.add_resource(
-    RejectCompanyAPI,
+    CompanyRejectAPI,
     "/api/company/reject/<int:company_id>"
 )
 
-class DrivecreateAPI(Resource):
+class DriveCreateAPI(Resource):
     @auth_required('token')
     @roles_required('company')
     def post(self):
@@ -149,17 +126,14 @@ class DrivecreateAPI(Resource):
         company = Company.query.filter_by(
             user_id=company_user
         ).first()
-
         if not company:
             return {
                 "message": "Company profile not found"
             }, 404
-
         if company.status != "approved":
             return {
                 "message": "Company must be approved by admin before creating a placement drive"
             }, 403
-
         drive = PlacementDrive(
             company_id=company.id,
             job_title=data["job_title"],
@@ -170,17 +144,15 @@ class DrivecreateAPI(Resource):
             status="pending",
             deadline=datetime.strptime(data["deadline"], "%Y-%m-%d").date()
         )
-
         db.session.add(drive)
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Placement Drive Created"
         }, 201
-    
+
 api.add_resource(
-    DrivecreateAPI,
+    DriveCreateAPI,
     '/api/drive/create'
 )
 class ListDrivesAPI(Resource):
@@ -189,24 +161,16 @@ class ListDrivesAPI(Resource):
     @roles_required("admin")
     @cache.cached(timeout=60)
     def get(self):
-
         drives = PlacementDrive.query.all()
-
         result = []
-
         for drive in drives:
-
             company = Company.query.get(drive.company_id)
-
             result.append({
-
                 "id": drive.id,
                 "job_title": drive.job_title,
                 "company_name": company.company_name if company else "Unknown",
                 "status": drive.status
-
             })
-
         return result, 200
 
 
@@ -214,57 +178,47 @@ api.add_resource(
     ListDrivesAPI,
     "/api/drives"
 )
-class DriveapproveAPI(Resource):
+class DriveApproveAPI(Resource):
 
     @auth_required('token')
     @roles_required('admin')
     def put(self, drive_id):
-
         drive = PlacementDrive.query.get(drive_id)
-
         if not drive:
             return {
                 "message": "Drive not found"
             }, 404
-
         drive.status = "approved"
-
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Drive approved"
         }, 200
-    
+
 api.add_resource(
-    DriveapproveAPI,
+    DriveApproveAPI,
     '/api/drive/<int:drive_id>/approve'
 )
 
-class DriverejectAPI(Resource):
+class DriveRejectAPI(Resource):
 
     @auth_required('token')
     @roles_required('admin')
     def put(self, drive_id):
-
         drive = PlacementDrive.query.get(drive_id)
-
         if not drive:
             return {
                 "message": "Drive not found"
             }, 404
-
         drive.status = "rejected"
-
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Drive rejected"
         }, 200
 
 api.add_resource(
-    DriverejectAPI,
+    DriveRejectAPI,
     '/api/drive/<int:drive_id>/reject'
 )
 
@@ -274,21 +228,15 @@ class StudentDriveListAPI(Resource):
     @roles_required('student')
     @cache.cached(timeout=60)
     def get(self):
-
         drives = PlacementDrive.query.filter_by(
             status='approved'
         ).all()
-
         result = []
-
         for d in drives:
-
             company = Company.query.get(
                 d.company_id
             )
-
             result.append({
-
                 "id": d.id,
                 "job_title": d.job_title,
                 "description": d.description,
@@ -296,11 +244,9 @@ class StudentDriveListAPI(Resource):
                 "elig_branch": d.elig_branch,
                 "elig_year": d.elig_year,
                 "company_name": company.company_name
-
             })
-
         return result
-    
+
 api.add_resource(
     StudentDriveListAPI,
     '/api/student/drives'
@@ -311,74 +257,39 @@ class StudentProfileAPI(Resource):
     @roles_required("student")
 
     def get(self):
-
         student = Student.query.filter_by(
             user_id=current_user.id
         ).first()
-
         return {
-
             "name": student.name,
             "branch": student.branch,
             "cgpa": student.cgpa,
             "year": student.year,
             "phone": student.phone,
             "resume": student.resume
-
         },200
 
 
-    @auth_required()
-    @roles_required("student")
 
-    def put(self):
-
-        student = Student.query.filter_by(
-            user_id=current_user.id
-        ).first()
-
-        data = request.get_json()
-
-        student.name = data["name"]
-        student.branch = data["branch"]
-        student.cgpa = data["cgpa"]
-        student.year = data["year"]
-        student.phone = data["phone"]
-
-        db.session.commit()
-        cache.clear()
-
-        return {
-
-            "message":"Profile Updated Successfully"
-
-        },200
 
 
     @auth_required('token')
     @roles_required("student")
 
     def put(self):
-
         student = Student.query.filter_by(
             user_id=current_user.id
         ).first()
-
         data = request.get_json()
-
         student.name = data["name"]
         student.branch = data["branch"]
         student.cgpa = data["cgpa"]
         student.year = data["year"]
         student.phone = data["phone"]
-
         db.session.commit()
         cache.clear()
-
         return {
-
             "message":"Profile Updated Successfully"
-
         },200
 
 api.add_resource(
@@ -390,7 +301,6 @@ class ApplyDriveAPI(Resource):
     @auth_required('token')
     @roles_required('student')
     def post(self, drive_id):
-
         student = Student.query.filter_by(user_id=current_user.id).first()
         drive = PlacementDrive.query.get(drive_id)
         if not student:
@@ -401,50 +311,46 @@ class ApplyDriveAPI(Resource):
             return {
                 "message": "Drive not found"
             }, 404
-
         if drive.status != "approved":
             return {
                 "message": "Drive not approved"
+            }, 400
+        if drive.deadline and date.today() > drive.deadline:
+            return {
+                "message": "Application deadline has passed"
             }, 400
         if student.cgpa < drive.min_cgpa:
             return {
                 "message": "CGPA criteria not satisfied"
             }, 400
-
         if student.branch != drive.elig_branch:
             return {
                 "message": "Branch not eligible"
             }, 400
-
         if student.year != drive.elig_year:
             return {
                 "message": "Year not eligible"
             }, 400
-        
         existing = Application.query.filter_by(
             student_id=student.id,
             driveid=drive_id
         ).first()
-
         if existing:
             return {
                 "message": "Already applied"
             }, 400
-
         application = Application(
             student_id=student.id,
             driveid=drive_id,
             status="applied"
         )
-
         db.session.add(application)
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Applied successfully"
         }, 201
-    
+
 api.add_resource(
     ApplyDriveAPI,
     '/api/apply/<int:drive_id>'
@@ -456,27 +362,19 @@ class StudentApplicationsAPI(Resource):
     @roles_required('student')
     @cache.cached(timeout=60)
     def get(self):
-
         student = Student.query.filter_by(
             user_id=current_user.id
         ).first()
-
         applications = Application.query.filter_by(
             student_id=student.id
         ).all()
-
         result = []
-
         for app in applications:
-
             drive = PlacementDrive.query.get(app.driveid)
-
             if not drive:
                 continue
-
             company = Company.query.get(drive.company_id)
             result.append({
-
                 "application_id": app.id,
                 "drive_id": app.driveid,
                 "drive_name": drive.job_title,
@@ -486,9 +384,7 @@ class StudentApplicationsAPI(Resource):
                 "interview_time": app.interview_time,
                 "interview_mode": app.interview_mode,
                 "interview_venue": app.interview_venue
-
             })
-
         return result
 api.add_resource(
     StudentApplicationsAPI,
@@ -500,29 +396,21 @@ class UploadResumeAPI(Resource):
     @auth_required('token')
     @roles_required("student")
     def post(self):
-
         student = Student.query.filter_by(
             user_id=current_user.id
         ).first()
-
         if "resume" not in request.files:
             return {
                 "message": "No file selected"
             }, 400
-
         file = request.files["resume"]
-
         filename = f"{student.id}.pdf"
-
         file.save(
             "static/uploads/" + filename
         )
-
         student.resume = "/static/uploads/" + filename
-
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Resume uploaded successfully"
         }, 200
@@ -540,7 +428,6 @@ class ApplicantsDriveAPI(Resource):
     def get(self, drive_id):
         applications = Application.query.filter_by(driveid=drive_id).all()
         result = []
-
         for app in applications:
             student = Student.query.get(app.student_id)
             result.append({
@@ -564,23 +451,32 @@ class ApplicationStatusUpdateAPI(Resource):
     @roles_required('company')
     def put(self, application_id):
         data = request.get_json()
-
-        application = Application.query.get(
-            application_id
-        )
-
+        application = Application.query.get(application_id)
         if not application:
             return {
                 "message": "Application not found"
             }, 404
+        student = Student.query.get(application.student_id)
+        if not student:
+            return {
+                "message": "Student not found"
+            }, 404
+        user = User.query.get(student.user_id)
+
+        if not user:
+            return {
+                "message": "User account not found"
+            }, 404
+        if not user.active:
+            return {
+                "message": "Blacklisted student's application cannot be updated"
+            }, 403
         application.status = data["status"]
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Status updated"
-        }
-
+        }, 200
 api.add_resource(
     ApplicationStatusUpdateAPI,
     '/api/application/<int:application_id>/status'
@@ -592,25 +488,18 @@ class InterviewScheduleAPI(Resource):
     @roles_required("company")
 
     def put(self, application_id):
-
         application = Application.query.get(application_id)
-
         if not application:
-
             return {
                 "message": "Application not found"
             },404
-
         data = request.get_json()
-
         application.interview_date = data["interview_date"]
         application.interview_time = data["interview_time"]
         application.interview_mode = data["interview_mode"]
         application.interview_venue = data["interview_venue"]
-
         db.session.commit()
         cache.clear()
-
         return {
             "message":"Interview Scheduled Successfully"
         },200
@@ -626,26 +515,17 @@ class AllApplicationsAPI(Resource):
     @roles_required('admin')
     @cache.cached(timeout=60)
     def get(self):
-
         applications = Application.query.all()
-
         result = []
-
         for a in applications:
-
             student = Student.query.get(a.student_id)
-
             drive = PlacementDrive.query.get(a.driveid)
-
             result.append({
-
                 "application_id": a.id,
                 "student_name": student.name,
                 "drive_name": drive.job_title,
                 "status": a.status
-
             })
-
         return result
 
 api.add_resource(
@@ -660,17 +540,19 @@ class StudentListAPI(Resource):
     def get(self):
         students = Student.query.all()
 
-        return [
-            {
-                "id": s.id,
-                "name": s.name,
-                "branch": s.branch,
-                "cgpa": s.cgpa,
-                "year": s.year
-            }
-            for s in students
-        ]
-
+        student_data = []
+        for student in students:
+                user = User.query.get(student.user_id)
+                student_data.append({
+                    "id": student.id,
+                    "name": student.name,
+                    "branch": student.branch,
+                    "cgpa": student.cgpa,
+                    "year": student.year,
+                    "active": user.active
+                })
+        return student_data
+    
 api.add_resource(
     StudentListAPI,
     '/api/students'
@@ -681,15 +563,10 @@ class SearchStudentAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
     def get(self):
-
         query = request.args.get("query", "").strip()
-
         students = Student.query.filter(db.or_(Student.name.ilike(f"%{query}%"),Student.branch.ilike(f"%{query}%"))).all()
-
         result = []
-
         for student in students:
-
             result.append({
                 "id": student.id,
                 "name": student.name,
@@ -697,7 +574,6 @@ class SearchStudentAPI(Resource):
                 "cgpa": student.cgpa,
                 "year": student.year
             })
-
         return result, 200
 
 api.add_resource(
@@ -706,24 +582,70 @@ api.add_resource(
 )
 
 class SearchDriveAPI(Resource):
+
     @auth_required('token')
     @roles_required('admin')
     def get(self):
+
         title = request.args.get('title')
         drives = PlacementDrive.query.filter(PlacementDrive.job_title.contains(title)).all()
+
+        companies = Company.query.filter(Company.company_name.contains(title)).all()
+
+        return {
+            "drives": [{
+                    "id": d.id,
+                    "job_title": d.job_title,
+                    "company_name": Company.query.get(d.company_id).company_name,
+                    "status": d.status}
+                for d in drives
+            ],
+            "companies": [{
+                    "id": c.id,
+                    "company_name": c.company_name,
+                    "website": c.website,
+                    "status": c.status}
+                for c in companies
+            ]
+        }
+    
+api.add_resource(
+    SearchDriveAPI,
+    '/api/search/drives'
+)
+
+class StudentSearchDriveAPI(Resource):
+
+    @auth_required('token')
+    @roles_required('student')
+    def get(self):
+
+        search = request.args.get('search', '')
+
+        drives = PlacementDrive.query.join(Company,PlacementDrive.company_id == Company.id).filter(PlacementDrive.status == 'approved').filter(
+            db.or_(
+                PlacementDrive.job_title.contains(search),
+                Company.company_name.contains(search)
+            )).all()
 
         return [
             {
                 "id": d.id,
                 "job_title": d.job_title,
-                "status": d.status
+                "description": d.description,
+                "min_cgpa": d.min_cgpa,
+                "elig_branch": d.elig_branch,
+                "elig_year": d.elig_year,
+                "status": d.status,
+                "company_name": Company.query.get(
+                    d.company_id
+                ).company_name
             }
             for d in drives
         ]
-
 api.add_resource(
-    SearchDriveAPI,
-    '/api/search/drives'
+    StudentSearchDriveAPI,
+    '/api/student/search/drives'
 )
 
 class CompanyDriveAPI(Resource):
@@ -739,32 +661,27 @@ class CompanyDriveAPI(Resource):
             {
                 "id": d.id,
                 "job_title": d.job_title,
-                "status": d.status
+                "status": d.status,
+                "applicants": Application.query.filter_by(driveid=d.id).count()
             }
             for d in drives
         ]
-
 api.add_resource(
     CompanyDriveAPI,
     '/api/company/drives'
 )
-
 class CompanyProfileAPI(Resource):
 
     @auth_required()
     @roles_required("company")
 
     def get(self):
-
         company = Company.query.filter_by(
             user_id=current_user.id
         ).first()
-
         return {
-
             "company_name": company.company_name,
             "website": company.website
-
         },200
 
 
@@ -772,28 +689,47 @@ class CompanyProfileAPI(Resource):
     @roles_required("company")
 
     def put(self):
-
         company = Company.query.filter_by(
             user_id=current_user.id
         ).first()
-
         data = request.get_json()
-
         company.company_name = data["company_name"]
         company.website = data["website"]
-
         db.session.commit()
         cache.clear()
-
         return {
-
             "message":"Profile Updated Successfully"
-
         },200
 
 api.add_resource(
     CompanyProfileAPI,
     "/api/company/profile"
+)
+class BlacklistCompanyAPI(Resource):
+
+    @auth_required('token')
+    @roles_required('admin')
+    def put(self, company_id):
+
+        company = Company.query.get(company_id)
+
+        if not company:
+            return {
+                "message": "Company not found"
+            }, 404
+
+        company.status = "blacklisted"
+
+        db.session.commit()
+        cache.clear()
+
+        return {
+            "message": "Company blacklisted"
+        }, 200
+    
+api.add_resource(
+    BlacklistCompanyAPI,
+    '/api/company/<int:company_id>/blacklist'
 )
 
 class DriveDetailsAPI(Resource):
@@ -805,7 +741,6 @@ class DriveDetailsAPI(Resource):
             return {
                 "message": "Drive not found"
             }, 404
-
         return {
             "id": drive.id,
             "job_title": drive.job_title,
@@ -827,7 +762,6 @@ class SearchApplicantAPI(Resource):
     def get(self):
         branch = request.args.get('branch')
         students = Student.query.filter_by(branch=branch).all()
-
         return [
             {
                 "id": s.id,
@@ -848,21 +782,17 @@ class DeleteDriveAPI(Resource):
     def delete(self, drive_id):
         company = Company.query.filter_by(user_id=current_user.id).first()
         drive = PlacementDrive.query.get(drive_id)
-
         if not drive:
             return {
                 "message": "Drive not found"
             }, 404
-
         if drive.company_id != company.id:
             return {
                 "message": "You can delete only your own drives"
             }, 403
-
         db.session.delete(drive)
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Drive deleted"
         }, 200
@@ -876,19 +806,14 @@ class CompleteDriveAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
     def put(self, drive_id):
-
         drive = PlacementDrive.query.get(drive_id)
-
         if not drive:
             return {
                 "message": "Drive not found"
             }, 404
-
         drive.status = "completed"
-
         db.session.commit()
         cache.clear()
-
         return {
             "message": "Drive marked completed"
         }, 200
@@ -904,34 +829,24 @@ class BlacklistStudentAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
     def put(self, student_id):
-
         student = Student.query.get(student_id)
-
         if not student:
             return {
                 "message": "Student not found"
             }, 404
-
         user = User.query.get(student.user_id)
-
         if not user:
             return {
                 "message": "User account not found"
             }, 404
-
         user.active = False
-
         applications = Application.query.filter_by(
             student_id=student.id
         ).all()
-
         for app in applications:
             app.status = "cancelled"
-
         db.session.commit()
-
         cache.clear()
-
         return {
             "message": "Student blacklisted successfully"
         }, 200
@@ -946,16 +861,12 @@ class ApplicationDetailsAPI(Resource):
     @auth_required('token')
     @roles_required('admin')
     def get(self, application_id):
-
         app = Application.query.get(application_id)
-
         if not app:
             return {
                 "message":"Application not found"
             },404
-
         student = Student.query.get(app.student_id)
-
         return {
             "application_id": app.id,
             "student_id": student.id,
@@ -975,18 +886,13 @@ class ExportCSVAPI(Resource):
     @auth_required("token")
     @roles_required("student")
     def get(self):
-
         from tasks import export_student_applications
-
         student = Student.query.filter_by(user_id=current_user.id).first()
-
         if not student:
             return {
                 "message": "Student profile not found"
             }, 404
-
         task = export_student_applications.delay(student.id)
-
         return {
             "message": "Export Started",
             "task_id": task.id
@@ -1002,34 +908,28 @@ class ExportStatusAPI(Resource):
     @auth_required("token")
     @roles_required("student")
     def get(self, task_id):
-
         from tasks import export_student_applications
-
         task = export_student_applications.AsyncResult(task_id)
-
         if task.state == "PENDING":
             return {
                 "status": "pending",
                 "message": "Export is still processing"
             }, 200
-
         elif task.state == "SUCCESS":
             return {
                 "status": "completed",
                 "message": "CSV export completed",
                 "result": task.result
             }, 200
-
         elif task.state == "FAILURE":
             return {
                 "status": "failed",
                 "message": str(task.info)
             }, 500
-
         return {
             "status": task.state.lower()
         }, 200
-    
+
 api.add_resource(
     ExportStatusAPI,
     "/api/student/export/status/<string:task_id>"
